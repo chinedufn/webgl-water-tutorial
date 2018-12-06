@@ -1,0 +1,24 @@
+        <html>
+<head>
+  <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
+</head>
+<body>
+
+  <div id="webgl-water-tutorial" height="150" width="150" />
+
+  <script src='/webgl_water_tutorial.js'></script>
+
+  <script>
+      window.addEventListener('load', function () {
+          window.wasm_bindgen('/webgl_water_tutorial_bg.wasm')
+          .then(function () {
+            // Start our rust application. You can find `WebGLWaterApp` in `src/lib.rs`
+            var app = new window.wasm_bindgen.WebGLWaterApp()
+            app.start()
+          })
+      })
+
+  </script>
+
+</body>
+</html>

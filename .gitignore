@@ -1,0 +1,6 @@
+/target
+**/*.rs.bk
+Cargo.lock
+webgl_water_tutorial.js
+webgl_water_tutorial_bg.wasm
+.idea
