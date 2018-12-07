@@ -8,8 +8,10 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [dependencies]
-wasm-bindgen = "=0.2.29"
 console_error_panic_hook = "=0.1.5"
+nalgebra = "=0.16.12"
+wasm-bindgen = "=0.2.29"
+js-sys = "=0.3.6"
 
 [dependencies.web-sys]
 version = "=0.3.6"
@@ -23,5 +25,8 @@ features = [
   'WebGlProgram',
   'WebGlRenderingContext',
   'WebGlShader',
+  'WebGlVertexArrayObject',
+  'WebGlUniformLocation',
   'Window',
+  'console',
 ]
