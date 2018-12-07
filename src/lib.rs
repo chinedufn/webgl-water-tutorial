@@ -211,7 +211,6 @@ impl Render for WaterTile {
 
         model_view_array.copy_from_slice(model_view.as_slice());
 
-        let model_view_buffer = gl.create_buffer().unwrap();
         let model_view_uni = gl.get_uniform_location(&shader.program, "modelView");
         let model_view_uni = model_view_uni.as_ref();
 
@@ -226,7 +225,7 @@ impl Render for WaterTile {
         gl.uniform_matrix4fv_with_f32_array(perspective_uni, false, &mut perspective_array);
 
         // TODO: Generate vertices based on WaterTile's fields (pos.. width.. height..)
-        let vertices = [
+        let vertices: [f32; 12] = [
             0., 0., 0., // Bottom Left
             1., 0., 0., // Bottom Right
             1., 0., -1., // Top Right
@@ -247,13 +246,6 @@ impl Render for WaterTile {
         gl.buffer_data_with_array_buffer_view(GL::ARRAY_BUFFER, &vert_array, GL::STATIC_DRAW);
         gl.vertex_attrib_pointer_with_i32(pos_attrib as u32, 3, GL::FLOAT, false, 0, 0);
         gl.enable_vertex_attrib_array(pos_attrib as u32);
-
-
-        gl.draw_arrays(
-            WebGlRenderingContext::TRIANGLES,
-            0,
-            (vertices.len() / 3) as i32,
-        );
 
         // TODO: Breadcrumb - u16
         let mut indices: [u8; 6] = [0, 1, 2, 0, 2, 3];
