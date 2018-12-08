@@ -62,7 +62,7 @@ void main() {
 /// Used to run the application from the web
 #[wasm_bindgen]
 pub struct WebClient {
-    app: App,
+    app: Rc<App>,
     gl: Rc<WebGlRenderingContext>,
     renderer: WebRenderer,
 }
@@ -74,14 +74,13 @@ impl WebClient {
     pub fn new() -> WebClient {
         console_error_panic_hook::set_once();
 
-        let gl = Rc::new(WebClient::create_webgl_context().unwrap());
+        let app = Rc::new(App::new());
+
+        let gl = Rc::new(WebClient::create_webgl_context(Rc::clone(&app)).unwrap());
+
         let renderer = WebRenderer::new(Rc::clone(&gl));
 
-        WebClient {
-            app: App::new(),
-            gl,
-            renderer,
-        }
+        WebClient { app, gl, renderer }
     }
 
     /// Start our WebGL Water application. `index.html` will call this function in order
@@ -90,7 +89,7 @@ impl WebClient {
         Ok(())
     }
 
-    fn create_webgl_context() -> Result<WebGlRenderingContext, JsValue> {
+    fn create_webgl_context(app: Rc<App>) -> Result<WebGlRenderingContext, JsValue> {
         let window = window().unwrap();
         let document = window.document().unwrap();
 
@@ -98,6 +97,64 @@ impl WebClient {
 
         canvas.set_width(500);
         canvas.set_height(500);
+
+        {
+            let app = Rc::clone(&app);
+
+            let on_mouse_down = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+                web_sys::console::log_1(&"mouse down".into());
+            }) as Box<FnMut(_)>);
+
+            canvas.add_event_listener_with_callback(
+                "mousedown",
+                on_mouse_down.as_ref().unchecked_ref(),
+            )?;
+
+            on_mouse_down.forget();
+        }
+
+        {
+            let app = Rc::clone(&app);
+
+            let on_mouse_up = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+                web_sys::console::log_1(&"mouse up".into());
+            }) as Box<FnMut(_)>);
+
+            canvas.add_event_listener_with_callback(
+                "mouseup",
+                on_mouse_up.as_ref().unchecked_ref(),
+            )?;
+
+            on_mouse_up.forget();
+        }
+        {
+            let app = Rc::clone(&app);
+
+            let on_mouse_move = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+                web_sys::console::log_1(&"mouse moved".into());
+            }) as Box<FnMut(_)>);
+
+            canvas.add_event_listener_with_callback(
+                "mousemove",
+                on_mouse_move.as_ref().unchecked_ref(),
+            )?;
+
+            on_mouse_move.forget();
+        }
+        {
+            let app = Rc::clone(&app);
+
+            let on_mouse_out = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+                web_sys::console::log_1(&"mouse out".into());
+            }) as Box<FnMut(_)>);
+
+            canvas.add_event_listener_with_callback(
+                "mouseout",
+                on_mouse_out.as_ref().unchecked_ref(),
+            )?;
+
+            on_mouse_out.forget();
+        }
 
         let gl: WebGlRenderingContext = canvas.get_context("webgl")?.unwrap().dyn_into()?;
 
@@ -248,14 +305,22 @@ impl Render for WaterTile {
         gl.enable_vertex_attrib_array(pos_attrib as u32);
 
         // TODO: Breadcrumb - u16
-        let mut indices: [u8; 6] = [0, 1, 2, 0, 2, 3];
+        let mut indices: [u16; 6] = [0, 1, 2, 0, 2, 3];
+
+        let indices_location = indices.as_ptr() as u32 / 2;
+        let indices_array = js_sys::Uint16Array::new(&memory_buffer)
+            .subarray(indices_location, indices_location + indices.len() as u32);
 
         let index_buffer = gl.create_buffer().unwrap();
         gl.bind_buffer(GL::ELEMENT_ARRAY_BUFFER, Some(&index_buffer));
-        gl.buffer_data_with_u8_array(GL::ELEMENT_ARRAY_BUFFER, &mut indices[..], GL::STATIC_DRAW);
+        gl.buffer_data_with_array_buffer_view(
+            GL::ELEMENT_ARRAY_BUFFER,
+            &indices_array,
+            GL::STATIC_DRAW,
+        );
 
         // TODO: unsigned_short + buffer_data_with_u16_array
-        gl.draw_elements_with_i32(GL::TRIANGLES, indices.len() as i32, GL::UNSIGNED_BYTE, 0);
+        gl.draw_elements_with_i32(GL::TRIANGLES, indices.len() as i32, GL::UNSIGNED_SHORT, 0);
     }
 }
 
