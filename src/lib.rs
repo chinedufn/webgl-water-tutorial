@@ -20,8 +20,6 @@ use js_sys::WebAssembly;
 use nalgebra;
 use nalgebra::{Isometry3, Perspective3, Point3, Vector3};
 use std::collections::HashMap;
-use std::f32::consts::PI;
-use std::ops::Deref;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
@@ -32,6 +30,9 @@ use web_sys::WebGlRenderingContext as GL;
 /// web_sys API docs
 ///  https://rustwasm.github.io/wasm-bindgen/api/web_sys/
 use web_sys::*;
+
+mod app;
+use self::app::*;
 
 // TODO: Use WebGlVertexArrayObject when we refactor and clean up
 
@@ -103,6 +104,9 @@ impl WebClient {
 
             let on_mouse_down = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
                 web_sys::console::log_1(&"mouse down".into());
+                let x = event.client_x();
+                let y = event.client_y();
+                app.store.borrow_mut().msg(&Msg::MouseDown(x, y));
             }) as Box<FnMut(_)>);
 
             canvas.add_event_listener_with_callback(
@@ -118,6 +122,7 @@ impl WebClient {
 
             let on_mouse_up = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
                 web_sys::console::log_1(&"mouse up".into());
+                app.store.borrow_mut().msg(&Msg::MouseUp);
             }) as Box<FnMut(_)>);
 
             canvas.add_event_listener_with_callback(
@@ -132,6 +137,9 @@ impl WebClient {
 
             let on_mouse_move = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
                 web_sys::console::log_1(&"mouse moved".into());
+                let x = event.client_x();
+                let y = event.client_y();
+                app.store.borrow_mut().msg(&Msg::MouseMove(x, y));
             }) as Box<FnMut(_)>);
 
             canvas.add_event_listener_with_callback(
@@ -146,6 +154,7 @@ impl WebClient {
 
             let on_mouse_out = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
                 web_sys::console::log_1(&"mouse out".into());
+                app.store.borrow_mut().msg(&Msg::MouseOut);
             }) as Box<FnMut(_)>);
 
             canvas.add_event_listener_with_callback(
@@ -167,49 +176,10 @@ impl WebClient {
 
     /// Render the scene. `index.html` will call this once every requestAnimationFrame
     pub fn render(&self) {
-        self.renderer.render(&self.gl, &self.app.state);
+        self.renderer.render(&self.gl, &self.app.store.borrow().state);
     }
 }
 
-/// Used to instantiate our application
-struct App {
-    state: StateWrapper,
-}
-
-impl App {
-    /// Create a new instance of our WebGL Water application
-    pub fn new() -> App {
-        App {
-            state: StateWrapper(State::new()),
-        }
-    }
-}
-
-struct State {
-    camera: Camera,
-}
-
-impl State {
-    fn new() -> State {
-        State {
-            camera: Camera::new(),
-        }
-    }
-
-    pub fn camera(&self) -> &Camera {
-        &self.camera
-    }
-}
-
-struct StateWrapper(State);
-
-impl Deref for StateWrapper {
-    type Target = State;
-
-    fn deref(&self) -> &State {
-        &self.0
-    }
-}
 
 struct WebRenderer {
     gl: Rc<WebGlRenderingContext>,
@@ -324,48 +294,6 @@ impl Render for WaterTile {
     }
 }
 
-static ORBIT_RADIUS: f32 = 15.0;
-
-struct Camera {
-    projection: Perspective3<f32>,
-    left_right_radians: f32,
-    up_down_radians: f32,
-}
-
-impl Camera {
-    pub fn new() -> Camera {
-        let fovy = PI / 3.0;
-
-        Camera {
-            projection: Perspective3::new(fovy, 1.0, 0.1, 100.0),
-            left_right_radians: 45.0f32.to_radians(),
-            up_down_radians: 80.0f32.to_radians(),
-        }
-    }
-
-    pub fn view(&self) -> Isometry3<f32> {
-        let eye = self.get_eye_pos();
-
-        let target = Point3::new(0.0, 0.0, 0.0);
-
-        Isometry3::look_at_rh(&eye, &target, &Vector3::y())
-    }
-
-    pub fn get_eye_pos(&self) -> Point3<f32> {
-        let yaw = self.left_right_radians;
-        let pitch = self.up_down_radians;
-
-        let eye_x = ORBIT_RADIUS * yaw.sin() * pitch.cos();
-        let eye_y = ORBIT_RADIUS * pitch.sin();
-        let eye_z = ORBIT_RADIUS * yaw.cos() * pitch.cos();
-
-        Point3::new(eye_x, eye_y, eye_z)
-    }
-
-    pub fn projection(&self) -> &Perspective3<f32> {
-        &self.projection
-    }
-}
 
 //        let cb = Closure::wrap(Box::new(move || {
 //             web_sys::console::log_1(&"raf called".into());
