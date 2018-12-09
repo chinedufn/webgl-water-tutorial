@@ -60,7 +60,6 @@ impl State {
                 let x_delta = old_x as i32 - x;
                 let y_delta = y - old_y as i32;
 
-                // TODO: Speed constants
                 self.camera.orbit_left_right(x_delta as f32 / 50.0);
                 self.camera.orbit_up_down(y_delta as f32 / 50.0);
 

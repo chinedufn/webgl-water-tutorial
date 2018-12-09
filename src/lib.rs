@@ -18,7 +18,7 @@ extern crate wasm_bindgen;
 use console_error_panic_hook;
 use js_sys::WebAssembly;
 use nalgebra;
-use nalgebra::{Isometry3, Perspective3, Point3, Vector3};
+use nalgebra::{Isometry3, Matrix4, Perspective3, Point3, Vector3};
 use std::collections::HashMap;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
@@ -103,7 +103,6 @@ impl WebClient {
             let app = Rc::clone(&app);
 
             let on_mouse_down = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
-                web_sys::console::log_1(&"mouse down".into());
                 let x = event.client_x();
                 let y = event.client_y();
                 app.store.borrow_mut().msg(&Msg::MouseDown(x, y));
@@ -121,7 +120,6 @@ impl WebClient {
             let app = Rc::clone(&app);
 
             let on_mouse_up = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
-                web_sys::console::log_1(&"mouse up".into());
                 app.store.borrow_mut().msg(&Msg::MouseUp);
             }) as Box<FnMut(_)>);
 
@@ -136,7 +134,6 @@ impl WebClient {
             let app = Rc::clone(&app);
 
             let on_mouse_move = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
-                web_sys::console::log_1(&"mouse moved".into());
                 let x = event.client_x();
                 let y = event.client_y();
                 app.store.borrow_mut().msg(&Msg::MouseMove(x, y));
@@ -153,7 +150,6 @@ impl WebClient {
             let app = Rc::clone(&app);
 
             let on_mouse_out = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
-                web_sys::console::log_1(&"mouse out".into());
                 app.store.borrow_mut().msg(&Msg::MouseOut);
             }) as Box<FnMut(_)>);
 
@@ -176,10 +172,10 @@ impl WebClient {
 
     /// Render the scene. `index.html` will call this once every requestAnimationFrame
     pub fn render(&self) {
-        self.renderer.render(&self.gl, &self.app.store.borrow().state);
+        self.renderer
+            .render(&self.gl, &self.app.store.borrow().state);
     }
 }
-
 
 struct WebRenderer {
     gl: Rc<WebGlRenderingContext>,
@@ -231,10 +227,14 @@ impl Render for WaterTile {
         let view = state.camera().view();
         let model = Isometry3::new(Vector3::new(pos.0, pos.1, pos.2), nalgebra::zero());
 
+        let x_scale = 7.0;
+        let z_scale = 7.0;
+
+        let scale = Matrix4::new_nonuniform_scaling(&Vector3::new(x_scale, 1.0, z_scale));
+
         let mut model_view_array = [0.; 16];
 
-        let model_view = view * model;
-        let model_view = model_view.to_homogeneous();
+        let model_view = view.to_homogeneous() * scale * model.to_homogeneous();
 
         model_view_array.copy_from_slice(model_view.as_slice());
 
@@ -253,10 +253,10 @@ impl Render for WaterTile {
 
         // TODO: Generate vertices based on WaterTile's fields (pos.. width.. height..)
         let vertices: [f32; 12] = [
-            0., 0., 0., // Bottom Left
-            1., 0., 0., // Bottom Right
-            1., 0., -1., // Top Right
-            0., 0., -1., // Top Left
+            -0.5, 0., 0.5, // Bottom Left
+            0.5, 0., 0.5, // Bottom Right
+            0.5, 0., -0.5, // Top Right
+            -0.5, 0., -0.5, // Top Left
         ];
 
         let vertices_location = vertices.as_ptr() as u32 / 4;
@@ -293,7 +293,6 @@ impl Render for WaterTile {
         gl.draw_elements_with_i32(GL::TRIANGLES, indices.len() as i32, GL::UNSIGNED_SHORT, 0);
     }
 }
-
 
 //        let cb = Closure::wrap(Box::new(move || {
 //             web_sys::console::log_1(&"raf called".into());
