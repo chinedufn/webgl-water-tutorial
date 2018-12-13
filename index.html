@@ -16,6 +16,7 @@
               var webClient = new window.wasm_bindgen.WebClient()
               webClient.start()
 
+              // FIXME: https://github.com/rustwasm/wasm-bindgen/blob/master/examples/request-animation-frame/src/lib.rs
               function render () {
                 webClient.render()
                 window.requestAnimationFrame(render)
