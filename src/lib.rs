@@ -294,6 +294,7 @@ impl Render for WaterTile {
     }
 }
 
+// TODO: Implement RAF in Rust
 //        let cb = Closure::wrap(Box::new(move || {
 //             web_sys::console::log_1(&"raf called".into());
 //        }) as Box<FnMut()>);
