@@ -38,7 +38,6 @@ use self::app::*;
 
 // TODO: Instruct reader on what version of Rust to use in README and in tutorial post
 
-
 /// Used to run the application from the web
 #[wasm_bindgen]
 pub struct WebClient {
@@ -61,9 +60,10 @@ impl WebClient {
 
         let app = Rc::new(App::new());
 
+        // FIXME: Don't need Rc.. Just pass it into places as we need it..
         let gl = Rc::new(create_webgl_context(Rc::clone(&app)).unwrap());
 
-        let renderer = WebRenderer::new(Rc::clone(&gl));
+        let renderer = WebRenderer::new(&gl);
 
         WebClient { app, gl, renderer }
     }
@@ -79,13 +79,12 @@ impl WebClient {
     /// Render the scene. `index.html` will call this once every requestAnimationFrame
     pub fn render(&self) {
         self.renderer
-            .render(&self.gl, &self.app.store.borrow().state);
+            .render(&self.gl, &self.app.store.borrow().state, &self.app.assets());
     }
 }
 
 mod render;
 use self::render::*;
-
 
 mod shader; // FIXME: create module file
 use self::shader::*;

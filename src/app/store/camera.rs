@@ -1,9 +1,7 @@
 use nalgebra::{Isometry3, Perspective3, Point3, Vector3};
-use std::cmp::max;
-use std::cmp::min;
 use std::f32::consts::PI;
 
-static ORBIT_RADIUS: f32 = 15.0;
+static ORBIT_RADIUS: f32 = 25.0;
 
 pub struct Camera {
     projection: Perspective3<f32>,

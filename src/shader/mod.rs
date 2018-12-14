@@ -37,9 +37,19 @@ pub struct ShaderSystem {
 impl ShaderSystem {
     pub fn new(gl: &WebGlRenderingContext) -> ShaderSystem {
         let mut programs = HashMap::new();
+
         programs.insert(
             ShaderKind::Water,
             Shader::new(&gl, WATER_VERTEX_SHADER, WATER_FRAGMENT_SHADER).unwrap(),
+        );
+        programs.insert(
+            ShaderKind::Mesh,
+            Shader::new(
+                &gl,
+                include_str!("./mesh-vertex.glsl"),
+                include_str!("./mesh-fragment.glsl"),
+            )
+            .unwrap(),
         );
 
         ShaderSystem { programs }
@@ -53,6 +63,7 @@ impl ShaderSystem {
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum ShaderKind {
     Water,
+    Mesh,
 }
 
 pub struct Shader {

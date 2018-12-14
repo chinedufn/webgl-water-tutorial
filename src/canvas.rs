@@ -5,6 +5,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
 use web_sys::*;
+use web_sys::WebGlRenderingContext as GL;
 
 // FIXME: Single responsibility
 // FIXME: Split event attachments into functions
@@ -83,6 +84,7 @@ pub fn create_webgl_context(app: Rc<App>) -> Result<WebGlRenderingContext, JsVal
     let gl: WebGlRenderingContext = canvas.get_context("webgl")?.unwrap().dyn_into()?;
 
     gl.clear_color(0.0, 0.0, 0.0, 1.0);
+    gl.enable(GL::DEPTH_TEST);
 
     document.body().unwrap().append_child(&canvas)?;
 
