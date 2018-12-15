@@ -21,6 +21,7 @@ pub struct RenderableMesh<'a> {
 
 pub struct MeshRenderOpts {
     pub pos: (f32, f32, f32),
+    pub clip_plane: [f32; 4],
 }
 
 impl<'a> Render for RenderableMesh<'a> {
@@ -40,8 +41,7 @@ impl<'a> Render for RenderableMesh<'a> {
         gl.enable_vertex_attrib_array(normal_attrib as u32);
 
         let view = state.camera().view();;
-        let model =
-            Isometry3::new(Vector3::new(pos.0, pos.1, pos.2), nalgebra::zero());
+        let model = Isometry3::new(Vector3::new(pos.0, pos.1, pos.2), nalgebra::zero());
 
         let mut model_array = [0.; 16];
         let mut view_array = [0.; 16];
@@ -65,6 +65,11 @@ impl<'a> Render for RenderableMesh<'a> {
         let perspective_uni = gl.get_uniform_location(&shader.program, "perspective");
         let perspective_uni = perspective_uni.as_ref();
         gl.uniform_matrix4fv_with_f32_array(perspective_uni, false, &mut perspective_array);
+
+        let clip_plane_uni = gl.get_uniform_location(&shader.program, "clipPlane");
+        let clip_plane_uni = clip_plane_uni.as_ref();
+        // FIXME: Get rid of clone.. needed atm since render func isn't mut
+        gl.uniform4fv_with_f32_array(clip_plane_uni, &mut opts.clip_plane.clone()[..]);
 
         let indices = &mesh.vertex_position_indices[..];
 

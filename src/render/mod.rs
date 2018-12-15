@@ -42,15 +42,23 @@ impl WebRenderer {
         gl.clear_color(0., 0., 0., 1.);
         gl.clear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT);
 
-        self.render_meshes(gl, state, assets);
+        // FIXME: Base distance on a water tile height variable -0.5
+        let above = -1000000.0;
+        // Have to flip it for.. mathematical reasons..
+        let clip_plane = [0., 1., 0., -above];
+
+        self.render_meshes(gl, state, assets, clip_plane);
         self.render_water(gl, state, assets);
     }
 
-    fn render_meshes(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+    fn render_meshes(&self, gl: &GL, state: &State, assets: &Assets, clip_plane: [f32; 4]) {
         let mesh_shader = self.shader_sys.get_shader(&ShaderKind::Mesh).unwrap();
         gl.use_program(Some(&mesh_shader.program));
 
-        let mesh_opts = MeshRenderOpts { pos: (0., 0., 0.) };
+        let mesh_opts = MeshRenderOpts {
+            pos: (0., 0., 0.),
+            clip_plane,
+        };
         // FIXME: Auto generated enum from build.rs instead of stringly typed.. Model::Terrain.to_str()
         let renderable_mesh = RenderableMesh {
             mesh: assets.get_mesh("Terrain").unwrap(),
@@ -92,7 +100,11 @@ impl WebRenderer {
         gl.clear_color(0.7, 0.7, 0.7, 1.);
         gl.clear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT);
 
-        self.render_meshes(gl, state, assets);
+        // FIXME: Base distance on a water tile height variable -0.5
+        let water_tile_y = 0.0;
+        let clip_plane = [0., -1., 0., water_tile_y];
+
+        self.render_meshes(gl, state, assets, clip_plane);
     }
 
     fn render_refraction_visual(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {

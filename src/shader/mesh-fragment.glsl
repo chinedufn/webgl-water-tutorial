@@ -9,7 +9,7 @@ varying float shouldClip;
 
 // FIXME: Lighting
 void main(void) {
-    if (shouldClip < 0.0) {
+    if (shouldClip == 1.0) {
         discard;
     }
 
