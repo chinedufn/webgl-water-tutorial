@@ -7,8 +7,8 @@ use wasm_bindgen::JsValue;
 use web_sys::*;
 use web_sys::WebGlRenderingContext as GL;
 
-pub static CANVAS_WIDTH: i32 = 500;
-pub static CANVAS_HEIGHT: i32 = 500;
+pub static CANVAS_WIDTH: i32 = 512;
+pub static CANVAS_HEIGHT: i32 = 512;
 
 // FIXME: Single responsibility
 // FIXME: Split event attachments into functions

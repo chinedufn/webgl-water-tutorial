@@ -39,18 +39,24 @@ impl<'a> Render for RenderableMesh<'a> {
         let normal_attrib = gl.get_attrib_location(&shader.program, "normal");
         gl.enable_vertex_attrib_array(normal_attrib as u32);
 
-        let view = state.camera().view();
-        let model = Isometry3::new(Vector3::new(pos.0, pos.1, pos.2), nalgebra::zero());
-        let mut model_view_array = [0.; 16];
+        let view = state.camera().view();;
+        let model =
+            Isometry3::new(Vector3::new(pos.0, pos.1, pos.2), nalgebra::zero());
 
-        let model_view = view.to_homogeneous() * model.to_homogeneous();
+        let mut model_array = [0.; 16];
+        let mut view_array = [0.; 16];
 
-        model_view_array.copy_from_slice(model_view.as_slice());
+        model_array.copy_from_slice(model.to_homogeneous().as_slice());
+        view_array.copy_from_slice(view.to_homogeneous().as_slice());
 
-        let model_view_uni = gl.get_uniform_location(&shader.program, "modelView");
-        let model_view_uni = model_view_uni.as_ref();
+        let model_uni = gl.get_uniform_location(&shader.program, "model");
+        let model_uni = model_uni.as_ref();
 
-        gl.uniform_matrix4fv_with_f32_array(model_view_uni, false, &mut model_view_array);
+        let view_uni = gl.get_uniform_location(&shader.program, "view");
+        let view_uni = view_uni.as_ref();
+
+        gl.uniform_matrix4fv_with_f32_array(model_uni, false, &mut model_array);
+        gl.uniform_matrix4fv_with_f32_array(view_uni, false, &mut view_array);
 
         let perspective = state.camera().projection();
         let mut perspective_array = [0.; 16];

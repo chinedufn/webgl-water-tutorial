@@ -52,6 +52,15 @@ impl ShaderSystem {
             )
             .unwrap(),
         );
+                programs.insert(
+            ShaderKind::TexturedQuad,
+            Shader::new(
+                &gl,
+                include_str!("./textured-quad-vertex.glsl"),
+                include_str!("./textured-quad-fragment.glsl"),
+            )
+            .unwrap(),
+        );
 
         ShaderSystem { programs }
     }

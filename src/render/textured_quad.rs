@@ -49,7 +49,7 @@ impl Render for TexturedQuad {
             self.texture_unit as i32,
         );
 
-        let vertex_data_attrib = gl.get_attrib_location(&shader.program, "position");
+        let vertex_data_attrib = gl.get_attrib_location(&shader.program, "vertexData");
         gl.enable_vertex_attrib_array(vertex_data_attrib as u32);
 
         // FIXME: This repeatedly creates new buffers. Not what we want. Use VAOs

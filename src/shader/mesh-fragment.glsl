@@ -5,7 +5,13 @@ precision mediump float;
 
 varying vec3 vNormal;
 
+varying float shouldClip;
+
 // FIXME: Lighting
 void main(void) {
+    if (shouldClip < 0.0) {
+        discard;
+    }
+
     gl_FragColor = vec4(vNormal, 1.0);
 }
