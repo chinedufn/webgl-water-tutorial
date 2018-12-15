@@ -19,6 +19,7 @@ impl Render for WaterTile {
 
     fn render(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets, shader: &Shader) {
         let pos_attrib = gl.get_attrib_location(&shader.program, "position");
+        gl.enable_vertex_attrib_array(pos_attrib as u32);
 
         let memory_buffer = wasm_bindgen::memory()
             .dyn_into::<WebAssembly::Memory>()
@@ -62,34 +63,10 @@ impl Render for WaterTile {
             -0.5, 0., -0.5, // Top Left
         ];
 
-        let vertices_location = vertices.as_ptr() as u32 / 4;
-
-        let vert_array = js_sys::Float32Array::new(&memory_buffer)
-            .subarray(vertices_location, vertices_location + vertices.len() as u32);
-
-        // TODO: Do this outside of the loop using a vertex array object. We don't
-        // need to repeatedly buffer this.. Do this before moving on to rendering the
-        // water.
-        let buffer = gl.create_buffer().unwrap();
-
-        gl.bind_buffer(GL::ARRAY_BUFFER, Some(&buffer));
-        gl.buffer_data_with_array_buffer_view(GL::ARRAY_BUFFER, &vert_array, GL::STATIC_DRAW);
-        gl.vertex_attrib_pointer_with_i32(pos_attrib as u32, 3, GL::FLOAT, false, 0, 0);
-        gl.enable_vertex_attrib_array(pos_attrib as u32);
-
         let mut indices: [u16; 6] = [0, 1, 2, 0, 2, 3];
 
-        let indices_location = indices.as_ptr() as u32 / 2;
-        let indices_array = js_sys::Uint16Array::new(&memory_buffer)
-            .subarray(indices_location, indices_location + indices.len() as u32);
-
-        let index_buffer = gl.create_buffer().unwrap();
-        gl.bind_buffer(GL::ELEMENT_ARRAY_BUFFER, Some(&index_buffer));
-        gl.buffer_data_with_array_buffer_view(
-            GL::ELEMENT_ARRAY_BUFFER,
-            &indices_array,
-            GL::STATIC_DRAW,
-        );
+        WaterTile::buffer_f32_data(&gl, &vertices, pos_attrib as u32, 3);
+        WaterTile::buffer_u16_indices(&gl, &mut indices);
 
         gl.draw_elements_with_i32(GL::TRIANGLES, indices.len() as i32, GL::UNSIGNED_SHORT, 0);
     }

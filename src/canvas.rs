@@ -7,6 +7,9 @@ use wasm_bindgen::JsValue;
 use web_sys::*;
 use web_sys::WebGlRenderingContext as GL;
 
+pub static CANVAS_WIDTH: i32 = 500;
+pub static CANVAS_HEIGHT: i32 = 500;
+
 // FIXME: Single responsibility
 // FIXME: Split event attachments into functions
 pub fn create_webgl_context(app: Rc<App>) -> Result<WebGlRenderingContext, JsValue> {
@@ -15,8 +18,8 @@ pub fn create_webgl_context(app: Rc<App>) -> Result<WebGlRenderingContext, JsVal
 
     let canvas: HtmlCanvasElement = document.create_element("canvas").unwrap().dyn_into()?;
 
-    canvas.set_width(500);
-    canvas.set_height(500);
+    canvas.set_width(CANVAS_WIDTH as u32);
+    canvas.set_height(CANVAS_HEIGHT as u32);
 
     // Mouse down
     {
