@@ -25,16 +25,21 @@ mod textured_quad;
 pub struct WebRenderer {
     shader_sys: ShaderSystem,
     refraction_framebuffer: Framebuffer,
+    reflection_framebuffer: Framebuffer,
 }
 
 impl WebRenderer {
     pub fn new(gl: &WebGlRenderingContext) -> WebRenderer {
         let shader_sys = ShaderSystem::new(&gl);
-        let refraction_framebuffer = WebRenderer::create_refraction_framebuffer(&gl).unwrap();
+        let refraction_framebuffer =
+            WebRenderer::create_water_framebuffer(&gl, TextureUnit::Refraction).unwrap();
+        let reflection_framebuffer =
+            WebRenderer::create_water_framebuffer(&gl, TextureUnit::Reflection).unwrap();
 
         WebRenderer {
             shader_sys,
             refraction_framebuffer,
+            reflection_framebuffer,
         }
     }
 
@@ -47,17 +52,26 @@ impl WebRenderer {
         // Have to flip it for.. mathematical reasons..
         let clip_plane = [0., 1., 0., -above];
 
-        self.render_meshes(gl, state, assets, clip_plane);
+        self.render_meshes(gl, state, assets, clip_plane, false);
         self.render_water(gl, state, assets);
     }
 
-    fn render_meshes(&self, gl: &GL, state: &State, assets: &Assets, clip_plane: [f32; 4]) {
+    // FIXME: Fewer args...
+    fn render_meshes(
+        &self,
+        gl: &GL,
+        state: &State,
+        assets: &Assets,
+        clip_plane: [f32; 4],
+        flip_camera_y: bool,
+    ) {
         let mesh_shader = self.shader_sys.get_shader(&ShaderKind::Mesh).unwrap();
         gl.use_program(Some(&mesh_shader.program));
 
         let mesh_opts = MeshRenderOpts {
             pos: (0., 0., 0.),
             clip_plane,
+            flip_camera_y,
         };
         // FIXME: Auto generated enum from build.rs instead of stringly typed.. Model::Terrain.to_str()
         let renderable_mesh = RenderableMesh {
@@ -73,6 +87,7 @@ impl WebRenderer {
 
     fn render_water(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
         self.render_refraction(gl, state, assets);
+        self.render_reflection(gl, state, assets);
 
         //        let Framebuffer { framebuffer, .. } = &self.refraction_framebuffer;
         //        gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
@@ -88,11 +103,9 @@ impl WebRenderer {
         water_tile.render(gl, state, assets, water_shader);
 
         self.render_refraction_visual(gl, state, assets);
+        self.render_reflection_visual(gl, state, assets);
     }
 
-    // FIXME: Clip anything before the water tile's height
-    // TODO: Breadcrumb - rewatch the water tutorial on clipping and figure out how to translate to WebGL
-    // without needing to touch every single shader
     fn render_refraction(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
         let Framebuffer { framebuffer, .. } = &self.refraction_framebuffer;
         gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
@@ -104,7 +117,21 @@ impl WebRenderer {
         let water_tile_y = 0.0;
         let clip_plane = [0., -1., 0., water_tile_y];
 
-        self.render_meshes(gl, state, assets, clip_plane);
+        self.render_meshes(gl, state, assets, clip_plane, false);
+    }
+
+    fn render_reflection(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+        let Framebuffer { framebuffer, .. } = &self.reflection_framebuffer;
+        gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
+
+        gl.clear_color(0.7, 0.7, 0.7, 1.);
+        gl.clear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT);
+
+        // FIXME: Base distance on a water tile height variable -0.5
+        let water_tile_y = 0.0;
+        let clip_plane = [0., 1., 0., -water_tile_y];
+
+        self.render_meshes(gl, state, assets, clip_plane, true);
     }
 
     fn render_refraction_visual(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
@@ -123,7 +150,23 @@ impl WebRenderer {
         .render(gl, state, assets, quad_shader);
     }
 
-    //    fn render_reflection(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {}
+    // FIXME: Normalize with code above... We're really just rendering a textured quad with a certain
+    // texture unit so move this code to TexturedQuad...
+    fn render_reflection_visual(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+        let quad_shader = self
+            .shader_sys
+            .get_shader(&ShaderKind::TexturedQuad)
+            .unwrap();
+        gl.use_program(Some(&quad_shader.program));
+        TexturedQuad::new(
+            CANVAS_WIDTH as u16 - 75,
+            CANVAS_HEIGHT as u16,
+            75,
+            75,
+            TextureUnit::Reflection as u8,
+        )
+        .render(gl, state, assets, quad_shader);
+    }
 }
 
 struct Framebuffer {
@@ -133,6 +176,7 @@ struct Framebuffer {
 
 enum TextureUnit {
     Refraction = 0,
+    Reflection = 1,
 }
 
 impl TextureUnit {
@@ -140,17 +184,21 @@ impl TextureUnit {
     fn get(&self) -> u32 {
         match self {
             TextureUnit::Refraction => GL::TEXTURE0,
+            TextureUnit::Reflection => GL::TEXTURE1,
         }
     }
 }
 
 impl WebRenderer {
-    fn create_refraction_framebuffer(gl: &WebGlRenderingContext) -> Result<Framebuffer, JsValue> {
+    fn create_water_framebuffer(
+        gl: &WebGlRenderingContext,
+        texture_unit: TextureUnit,
+    ) -> Result<Framebuffer, JsValue> {
         let framebuffer = gl.create_framebuffer();
         gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
 
         let texture = gl.create_texture();
-        gl.active_texture(TextureUnit::Refraction.get());
+        gl.active_texture(texture_unit.get());
         gl.bind_texture(GL::TEXTURE_2D, texture.as_ref());
 
         // FIXME: Confirm that these are the proper settings and understand why

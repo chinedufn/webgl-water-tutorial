@@ -22,6 +22,8 @@ pub struct RenderableMesh<'a> {
 pub struct MeshRenderOpts {
     pub pos: (f32, f32, f32),
     pub clip_plane: [f32; 4],
+    // FIXME: Better name
+    pub flip_camera_y: bool,
 }
 
 impl<'a> Render for RenderableMesh<'a> {
@@ -40,7 +42,12 @@ impl<'a> Render for RenderableMesh<'a> {
         let normal_attrib = gl.get_attrib_location(&shader.program, "normal");
         gl.enable_vertex_attrib_array(normal_attrib as u32);
 
-        let view = state.camera().view();;
+        let view = if opts.flip_camera_y {
+            state.camera().view_flipped_y()
+        } else {
+            state.camera().view()
+        };
+
         let model = Isometry3::new(Vector3::new(pos.0, pos.1, pos.2), nalgebra::zero());
 
         let mut model_array = [0.; 16];

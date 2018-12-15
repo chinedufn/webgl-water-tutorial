@@ -28,6 +28,16 @@ impl Camera {
         Isometry3::look_at_rh(&eye, &target, &Vector3::y())
     }
 
+    // FIXME: Better name
+    pub fn view_flipped_y(&self) -> Isometry3<f32> {
+        let mut eye = self.get_eye_pos();
+        eye.y = -1.0 * eye.y;
+
+        let target = Point3::new(0.0, 0.0, 0.0);
+
+        Isometry3::look_at_rh(&eye, &target, &Vector3::y())
+    }
+
     pub fn get_eye_pos(&self) -> Point3<f32> {
         let yaw = self.left_right_radians;
         let pitch = self.up_down_radians;
