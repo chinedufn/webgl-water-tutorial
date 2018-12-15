@@ -11,7 +11,8 @@ use web_sys::*;
 /// Create the vertex shader for our water.
 ///
 /// In a real application you _might_ store this in a `.glsl` file so that you have better syntax
-/// highlighting and then use `include_str!` to import it.
+/// highlig
+/// hting and then use `include_str!` to import it.
 static WATER_VERTEX_SHADER: &'static str = r#"
 attribute vec3 position;
 
@@ -64,6 +65,7 @@ impl ShaderSystem {
 pub enum ShaderKind {
     Water,
     Mesh,
+    TexturedQuad,
 }
 
 pub struct Shader {

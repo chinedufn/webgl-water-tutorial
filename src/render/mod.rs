@@ -19,26 +19,34 @@ use crate::canvas::CANVAS_HEIGHT;
 use crate::canvas::CANVAS_WIDTH;
 use wasm_bindgen::JsValue;
 
+mod textured_quad;
+
 pub struct WebRenderer {
     shader_sys: ShaderSystem,
+    refraction_framebuffer: Framebuffer,
 }
 
 impl WebRenderer {
     pub fn new(gl: &WebGlRenderingContext) -> WebRenderer {
         let shader_sys = ShaderSystem::new(&gl);
+        let refraction_framebuffer = WebRenderer::create_refraction_framebuffer(&gl).unwrap();
 
-        WebRenderer { shader_sys }
+        WebRenderer {
+            shader_sys,
+            refraction_framebuffer,
+        }
     }
 
     pub fn render(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
         gl.clear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT);
 
-        let water_shader = self.shader_sys.get_shader(&ShaderKind::Water).unwrap();
-        gl.use_program(Some(&water_shader.program));
+        self.render_meshes(gl, state, assets);
+        self.render_water(gl, state, assets);
+    }
 
-        let water_tile = WaterTile::new();
-
-        water_tile.render(gl, state, assets, water_shader);
+    fn render_meshes(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+        let mesh_shader = self.shader_sys.get_shader(&ShaderKind::Mesh).unwrap();
+        gl.use_program(Some(&mesh_shader.program));
 
         let mesh_opts = MeshRenderOpts { pos: (0., 0., 0.) };
         // FIXME: Auto generated enum from build.rs instead of stringly typed.. Model::Terrain.to_str()
@@ -47,15 +55,45 @@ impl WebRenderer {
             opts: &mesh_opts,
         };
 
-        let mesh_shader = self.shader_sys.get_shader(&ShaderKind::Mesh).unwrap();
-        gl.use_program(Some(&mesh_shader.program));
+        // TODO: add a texture quad to the top left corner of experience (75x75) and render
+        // refraction texture to it
+
         renderable_mesh.render(gl, state, assets, mesh_shader);
     }
 
-    fn create_refraction_framebuffer(
-        &self,
-        gl: &WebGlRenderingContext,
-    ) -> Result<Option<WebGlFramebuffer>, JsValue> {
+    fn render_water(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+        let Framebuffer { framebuffer, .. } = &self.refraction_framebuffer;
+        gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
+        self.render_refraction(gl, state, assets);
+
+//        let Framebuffer { framebuffer, .. } = &self.refraction_framebuffer;
+//        gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
+//        self.render_reflection(gl, state, assets);
+
+        gl.bind_framebuffer(GL::FRAMEBUFFER, None);
+
+        let water_shader = self.shader_sys.get_shader(&ShaderKind::Water).unwrap();
+        gl.use_program(Some(&water_shader.program));
+
+        let water_tile = WaterTile::new();
+
+        water_tile.render(gl, state, assets, water_shader);
+    }
+
+    fn render_refraction(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+        self.render_meshes(gl, state, assets);
+    }
+
+//    fn render_reflection(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {}
+}
+
+struct Framebuffer {
+    framebuffer: Option<WebGlFramebuffer>,
+    texture: Option<WebGlTexture>,
+}
+
+impl WebRenderer {
+    fn create_refraction_framebuffer(gl: &WebGlRenderingContext) -> Result<Framebuffer, JsValue> {
         let framebuffer = gl.create_framebuffer();
         gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
 
@@ -107,7 +145,10 @@ impl WebRenderer {
         gl.bind_framebuffer(GL::FRAMEBUFFER, None);
         gl.bind_texture(GL::TEXTURE_2D, None);
 
-        Ok(framebuffer)
+        Ok(Framebuffer {
+            framebuffer,
+            texture,
+        })
     }
 }
 
