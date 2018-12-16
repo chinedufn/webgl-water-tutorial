@@ -75,6 +75,11 @@ impl Render for WaterTile {
                 .as_ref(),
             TextureUnit::Dudv as i32,
         );
+        gl.uniform1i(
+            gl.get_uniform_location(&shader.program, "normalMap")
+                .as_ref(),
+            TextureUnit::NormalMap as i32,
+        );
 
         let seconds_elapsed = state.clock() / 1000.;
         let dudv_offset = (WAVE_SPEED * seconds_elapsed) % 1.;

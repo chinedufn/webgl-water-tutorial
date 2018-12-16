@@ -44,7 +44,7 @@ impl WebRenderer {
     }
 
     pub fn render(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
-        gl.clear_color(0., 0., 0., 1.);
+        gl.clear_color(0.53, 0.8, 0.98, 1.);
         gl.clear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT);
 
         // FIXME: Base distance on a water tile height variable -0.5
@@ -54,6 +54,7 @@ impl WebRenderer {
 
         self.render_meshes(gl, state, assets, clip_plane, false);
         self.render_water(gl, state, assets);
+        
     }
 
     // FIXME: Fewer args...
@@ -110,7 +111,7 @@ impl WebRenderer {
         let Framebuffer { framebuffer, .. } = &self.refraction_framebuffer;
         gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
 
-        gl.clear_color(0.7, 0.7, 0.7, 1.);
+        gl.clear_color(0.53, 0.8, 0.98, 1.);
         gl.clear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT);
 
         // FIXME: Base distance on a water tile height variable -0.5
@@ -124,7 +125,7 @@ impl WebRenderer {
         let Framebuffer { framebuffer, .. } = &self.reflection_framebuffer;
         gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
 
-        gl.clear_color(0.7, 0.7, 0.7, 1.);
+        gl.clear_color(0.53, 0.8, 0.98, 1.);
         gl.clear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT);
 
         // FIXME: Base distance on a water tile height variable -0.5
@@ -178,6 +179,7 @@ pub enum TextureUnit {
     Refraction = 0,
     Reflection = 1,
     Dudv = 2,
+    NormalMap = 3,
 }
 
 impl TextureUnit {
@@ -187,6 +189,7 @@ impl TextureUnit {
             TextureUnit::Refraction => GL::TEXTURE0,
             TextureUnit::Reflection => GL::TEXTURE1,
             TextureUnit::Dudv => GL::TEXTURE2,
+            TextureUnit::NormalMap => GL::TEXTURE3,
         }
     }
 }

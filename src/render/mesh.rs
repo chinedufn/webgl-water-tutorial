@@ -56,11 +56,8 @@ impl<'a> Render for RenderableMesh<'a> {
         model_array.copy_from_slice(model.to_homogeneous().as_slice());
         view_array.copy_from_slice(view.to_homogeneous().as_slice());
 
-
         let model_uni = gl.get_uniform_location(&shader.program, "model");
         let model_uni = model_uni.as_ref();
-
-
 
         let view_uni = gl.get_uniform_location(&shader.program, "view");
         let view_uni = view_uni.as_ref();
