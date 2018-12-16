@@ -13,7 +13,7 @@ use wasm_bindgen::JsCast;
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
 
-static WAVE_SPEED: f32 = 0.10;
+static WAVE_SPEED: f32 = 0.7;
 
 impl Render for WaterTile {
     fn shader_kind() -> ShaderKind {

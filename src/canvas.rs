@@ -71,7 +71,7 @@ pub fn create_webgl_context(app: Rc<App>) -> Result<WebGlRenderingContext, JsVal
         on_mouse_move.forget();
     }
 
-    // Mose out
+    // Mouse out
     {
         let app = Rc::clone(&app);
 
@@ -83,6 +83,21 @@ pub fn create_webgl_context(app: Rc<App>) -> Result<WebGlRenderingContext, JsVal
             .add_event_listener_with_callback("mouseout", on_mouse_out.as_ref().unchecked_ref())?;
 
         on_mouse_out.forget();
+    }
+
+    // Mouse wheel
+    {
+        let app = Rc::clone(&app);
+
+        let on_wheel = Closure::wrap(Box::new(move |event: web_sys::WheelEvent| {
+            let zoom_amount = event.delta_y() / 50.;
+
+            app.store.borrow_mut().msg(&Msg::Zoom(zoom_amount as f32));
+        }) as Box<FnMut(_)>);
+
+        canvas.add_event_listener_with_callback("wheel", on_wheel.as_ref().unchecked_ref())?;
+
+        on_wheel.forget();
     }
 
     let gl: WebGlRenderingContext = canvas.get_context("webgl")?.unwrap().dyn_into()?;

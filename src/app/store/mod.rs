@@ -75,6 +75,9 @@ impl State {
 
                 self.mouse.set_pos(*x, *y);
             }
+            Msg::Zoom(zoom) => {
+                self.camera.zoom(*zoom);
+            }
         }
     }
 }
@@ -101,4 +104,5 @@ pub enum Msg {
     MouseUp,
     MouseOut,
     MouseMove(i32, i32),
+    Zoom(f32),
 }

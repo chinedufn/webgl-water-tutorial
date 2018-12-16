@@ -1,12 +1,11 @@
 use nalgebra::{Isometry3, Perspective3, Point3, Vector3};
 use std::f32::consts::PI;
 
-static ORBIT_RADIUS: f32 = 25.0;
-
 pub struct Camera {
     projection: Perspective3<f32>,
     left_right_radians: f32,
     up_down_radians: f32,
+    orbit_radius: f32,
 }
 
 impl Camera {
@@ -17,6 +16,7 @@ impl Camera {
             projection: Perspective3::new(fovy, 1.0, 0.1, 100.0),
             left_right_radians: 45.0f32.to_radians(),
             up_down_radians: 80.0f32.to_radians(),
+            orbit_radius: 25.,
         }
     }
 
@@ -42,9 +42,9 @@ impl Camera {
         let yaw = self.left_right_radians;
         let pitch = self.up_down_radians;
 
-        let eye_x = ORBIT_RADIUS * yaw.sin() * pitch.cos();
-        let eye_y = ORBIT_RADIUS * pitch.sin();
-        let eye_z = ORBIT_RADIUS * yaw.cos() * pitch.cos();
+        let eye_x = self.orbit_radius * yaw.sin() * pitch.cos();
+        let eye_y = self.orbit_radius * pitch.sin();
+        let eye_z = self.orbit_radius * yaw.cos() * pitch.cos();
 
         Point3::new(eye_x, eye_y, eye_z)
     }
@@ -69,6 +69,20 @@ impl Camera {
 
         if self.up_down_radians - 0.1 < 0. {
             self.up_down_radians = 0.1;
+        }
+    }
+
+    pub fn orbit_radius (&self) -> f32 {
+        self.orbit_radius
+    }
+
+    pub fn zoom (&mut self, zoom: f32) {
+        self.orbit_radius += zoom;
+
+        if self.orbit_radius > 30. {
+            self.orbit_radius = 30.;
+        } else if self.orbit_radius < 5. {
+            self.orbit_radius = 5.;
         }
     }
 }
