@@ -12,7 +12,6 @@ pub struct ShaderSystem {
     programs: HashMap<ShaderKind, Shader>,
 }
 
-
 impl ShaderSystem {
     pub fn new(gl: &WebGlRenderingContext) -> ShaderSystem {
         let mut programs = HashMap::new();
