@@ -5,7 +5,6 @@ use crate::render::TextureUnit;
 use crate::render::WaterTile;
 use crate::shader::Shader;
 use crate::shader::ShaderKind;
-use crate::shader::ShaderSystem;
 use js_sys::WebAssembly;
 use nalgebra;
 use nalgebra::{Isometry3, Matrix4, Point3, Vector3};
@@ -13,7 +12,7 @@ use wasm_bindgen::JsCast;
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
 
-static WAVE_SPEED: f32 = 0.7;
+static WAVE_SPEED: f32 = 0.07;
 
 impl Render for WaterTile {
     fn shader_kind() -> ShaderKind {
@@ -31,22 +30,32 @@ impl Render for WaterTile {
 
         let pos = (0., -0.5, 0.);
 
+        // FIXME: Move some of this to the trait for re-usability. Then normalize with mesh.rs
         let view = state.camera().view();
-        let model = Isometry3::new(Vector3::new(pos.0, pos.1, pos.2), nalgebra::zero());
+        let view = view.to_homogeneous();
 
         let x_scale = 18.;
         let z_scale = 18.;
-
         let scale = Matrix4::new_nonuniform_scaling(&Vector3::new(x_scale, 1.0, z_scale));
 
-        let mut model_view_array = [0.; 16];
+        let model = Isometry3::new(Vector3::new(pos.0, pos.1, pos.2), nalgebra::zero());
+        let model = model.to_homogeneous();
+        let model = scale * model;
 
-        let model_view = view.to_homogeneous() * scale * model.to_homogeneous();
+        let mut model_array = [0.; 16];
+        let mut view_array = [0.; 16];
 
-        model_view_array.copy_from_slice(model_view.as_slice());
+        model_array.copy_from_slice(model.as_slice());
+        view_array.copy_from_slice(view.as_slice());
 
-        let model_view_uni = gl.get_uniform_location(&shader.program, "modelView");
-        let model_view_uni = model_view_uni.as_ref();
+        let model_uni = gl.get_uniform_location(&shader.program, "model");
+        let model_uni = model_uni.as_ref();
+
+        let view_uni = gl.get_uniform_location(&shader.program, "view");
+        let view_uni = view_uni.as_ref();
+
+        gl.uniform_matrix4fv_with_f32_array(model_uni, false, &mut model_array);
+        gl.uniform_matrix4fv_with_f32_array(view_uni, false, &mut view_array);
 
         // FIXME: We should only do this once and cache it in the `shader`
         // Shader.get_uniform_location ... Shader.uniforms: HashMap<String, u8>
@@ -76,7 +85,14 @@ impl Render for WaterTile {
             dudv_offset,
         );
 
-        gl.uniform_matrix4fv_with_f32_array(model_view_uni, false, &mut model_view_array);
+        let camera_pos = state.camera().get_eye_pos();
+        let mut camera_pos = [camera_pos.x, camera_pos.y, camera_pos.z];
+
+        gl.uniform3fv_with_f32_array(
+            gl.get_uniform_location(&shader.program, "cameraPos")
+                .as_ref(),
+            &mut camera_pos,
+        );
 
         let perspective = state.camera().projection();
         let mut perspective_array = [0.; 16];

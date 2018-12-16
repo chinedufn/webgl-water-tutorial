@@ -16,7 +16,7 @@ impl Camera {
             projection: Perspective3::new(fovy, 1.0, 0.1, 100.0),
             left_right_radians: 45.0f32.to_radians(),
             up_down_radians: 80.0f32.to_radians(),
-            orbit_radius: 25.,
+            orbit_radius: 15.,
         }
     }
 
@@ -72,11 +72,11 @@ impl Camera {
         }
     }
 
-    pub fn orbit_radius (&self) -> f32 {
+    pub fn orbit_radius(&self) -> f32 {
         self.orbit_radius
     }
 
-    pub fn zoom (&mut self, zoom: f32) {
+    pub fn zoom(&mut self, zoom: f32) {
         self.orbit_radius += zoom;
 
         if self.orbit_radius > 30. {

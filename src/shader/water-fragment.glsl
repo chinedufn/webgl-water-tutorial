@@ -4,6 +4,8 @@ uniform sampler2D refractionTexture;
 uniform sampler2D reflectionTexture;
 uniform sampler2D dudvTexture;
 
+varying vec3 fromFragmentToCamera;
+
 // Changes over time, making the water look like it's moving
 uniform float dudvOffset;
 
@@ -48,10 +50,19 @@ void main() {
     clamp(reflectTexCoords.x, 0.001, 0.999);
     clamp(reflectTexCoords.y, -0.999, -0.001);
 
-    vec4 refraction = texture2D(refractionTexture, refractTexCoords);
-    vec4 reflection = texture2D(reflectionTexture, reflectTexCoords);
+    vec4 refractColor = texture2D(refractionTexture, refractTexCoords);
+    vec4 reflectColor = texture2D(reflectionTexture, reflectTexCoords);
 
-    gl_FragColor = mix(refraction, reflection, 0.5);
+    vec3 toCamera = normalize(fromFragmentToCamera);
+
+    // Fresnel Effect. Looking at the water from above makes the water more transparent.
+    float refractiveFactor = dot(toCamera, vec3(0.0, 1.0, 0.0));
+
+    // A higher power makes the water more reflective since the refractive factor will decrease
+    // FIXME: Control refractiveFactor with a slider. Call it the fresnel effect slider
+    refractiveFactor = pow(refractiveFactor, 1.5);
+
+    gl_FragColor = mix(reflectColor, refractColor, refractiveFactor);
     // Mix in a bit of blue so that it looks like water
     gl_FragColor = mix(gl_FragColor, vec4(0.0, 0.3, 0.5, 1.0), 0.2);
 }
