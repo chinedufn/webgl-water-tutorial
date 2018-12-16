@@ -174,7 +174,7 @@ struct Framebuffer {
     texture: Option<WebGlTexture>,
 }
 
-enum TextureUnit {
+pub enum TextureUnit {
     Refraction = 0,
     Reflection = 1,
 }

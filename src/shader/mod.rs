@@ -8,32 +8,10 @@ use wasm_bindgen::JsCast;
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
 
-/// Create the vertex shader for our water.
-///
-/// In a real application you _might_ store this in a `.glsl` file so that you have better syntax
-/// highlig
-/// hting and then use `include_str!` to import it.
-static WATER_VERTEX_SHADER: &'static str = r#"
-attribute vec3 position;
-
-uniform mat4 perspective;
-uniform mat4 modelView;
-
-void main() {
-    gl_Position = perspective * modelView * vec4(position, 1.0);
-}
-"#;
-
-/// Create the fragment shader for our water.
-static WATER_FRAGMENT_SHADER: &'static str = r#"
-void main() {
-    gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);
-}
-"#;
-
 pub struct ShaderSystem {
     programs: HashMap<ShaderKind, Shader>,
 }
+
 
 impl ShaderSystem {
     pub fn new(gl: &WebGlRenderingContext) -> ShaderSystem {
@@ -41,7 +19,12 @@ impl ShaderSystem {
 
         programs.insert(
             ShaderKind::Water,
-            Shader::new(&gl, WATER_VERTEX_SHADER, WATER_FRAGMENT_SHADER).unwrap(),
+            Shader::new(
+                &gl,
+                include_str!("./water-vertex.glsl"),
+                include_str!("./water-fragment.glsl"),
+            )
+            .unwrap(),
         );
         programs.insert(
             ShaderKind::Mesh,
@@ -52,7 +35,7 @@ impl ShaderSystem {
             )
             .unwrap(),
         );
-                programs.insert(
+        programs.insert(
             ShaderKind::TexturedQuad,
             Shader::new(
                 &gl,

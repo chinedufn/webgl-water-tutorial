@@ -11,6 +11,7 @@ use nalgebra::{Isometry3, Matrix4, Point3, Vector3};
 use wasm_bindgen::JsCast;
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
+use crate::render::TextureUnit;
 
 impl Render for WaterTile {
     fn shader_kind() -> ShaderKind {
@@ -44,6 +45,18 @@ impl Render for WaterTile {
 
         let model_view_uni = gl.get_uniform_location(&shader.program, "modelView");
         let model_view_uni = model_view_uni.as_ref();
+
+        // FIXME: We should only do this once and cache it in the `shader`
+        // Shader.get_uniform_location ... Shader.uniforms: HashMap<String, u8>
+        // This way we don't hit the GPU over and over again for no reason
+        gl.uniform1i(
+            gl.get_uniform_location(&shader.program, "refractionTexture").as_ref(),
+            TextureUnit::Refraction.get() as i32,
+        );
+        gl.uniform1i(
+            gl.get_uniform_location(&shader.program, "reflectionTexture").as_ref(),
+            TextureUnit::Reflection.get() as i32,
+        );
 
         gl.uniform_matrix4fv_with_f32_array(model_view_uni, false, &mut model_view_array);
 
