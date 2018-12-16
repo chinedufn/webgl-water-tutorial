@@ -17,4 +17,6 @@ void main() {
     vec4 reflection = texture2D(reflectionTexture, reflectTexCoords);
 
     gl_FragColor = mix(refraction, reflection, 0.5);
+    // Mix in a bit of blue so that it looks like water
+    gl_FragColor = mix(gl_FragColor, vec4(0.0, 0.3, 0.5, 1.0), 0.3);
 }

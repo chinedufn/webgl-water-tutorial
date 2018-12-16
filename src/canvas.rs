@@ -12,6 +12,7 @@ pub static CANVAS_HEIGHT: i32 = 512;
 
 // FIXME: Single responsibility
 // FIXME: Split event attachments into functions
+// FIXME: https://rustwasm.github.io/wasm-bindgen/api/web_sys/struct.WheelEvent.html#method.delta_y to zoom
 pub fn create_webgl_context(app: Rc<App>) -> Result<WebGlRenderingContext, JsValue> {
     let window = window().unwrap();
     let document = window.document().unwrap();

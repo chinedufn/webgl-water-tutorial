@@ -57,6 +57,8 @@ impl Render for TexturedQuad {
 
         gl.draw_arrays(GL::TRIANGLES, 0, 6);
     }
+
+
 }
 
 impl TexturedQuad {
