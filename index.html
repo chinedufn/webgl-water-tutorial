@@ -17,9 +17,15 @@
               webClient.start()
 
               // FIXME: https://github.com/rustwasm/wasm-bindgen/blob/master/examples/request-animation-frame/src/lib.rs
+              let time = Date.now();
               function render () {
+                const dt = Date.now() - time
+
+                webClient.update(dt)
                 webClient.render()
                 window.requestAnimationFrame(render)
+
+                time = Date.now()
               }
 
               render()

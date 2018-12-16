@@ -9,6 +9,7 @@ pub struct Assets {
 
 impl Assets {
     pub fn new() -> Assets {
+        // FIXME: XmlHttpRequest request instead of including in binary
         // Deserializing on the client
         let meshes = include_bytes!("../../../meshes.bytes");
         let mut meshes: HashMap<String, BlenderMesh> = bincode::deserialize(meshes).unwrap();

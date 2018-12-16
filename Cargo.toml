@@ -29,6 +29,7 @@ features = [
   'EventTarget',
   'HtmlCanvasElement',
   'HtmlElement',
+  'HtmlImageElement',
   'MouseEvent',
   'Node',
   'WebGlBuffer',
@@ -44,3 +45,6 @@ features = [
   'Window',
   'console',
 ]
+
+[profile.release]
+lto = true

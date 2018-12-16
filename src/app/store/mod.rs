@@ -25,6 +25,7 @@ impl Store {
 }
 
 pub struct State {
+    clock: f32,
     camera: Camera,
     mouse: Mouse,
 }
@@ -32,6 +33,8 @@ pub struct State {
 impl State {
     fn new() -> State {
         State {
+            /// Time elapsed since the application started, in milliseconds
+            clock: 0.,
             camera: Camera::new(),
             mouse: Mouse::default(),
         }
@@ -41,8 +44,15 @@ impl State {
         &self.camera
     }
 
+    pub fn clock(&self) -> f32 {
+        self.clock
+    }
+
     pub fn msg(&mut self, msg: &Msg) {
         match msg {
+            Msg::AdvanceClock(dt) => {
+                self.clock += dt;
+            }
             Msg::MouseDown(x, y) => {
                 self.mouse.set_pressed(true);
                 self.mouse.set_pos(*x, *y);
@@ -86,6 +96,7 @@ impl StateWrapper {
 }
 
 pub enum Msg {
+    AdvanceClock(f32),
     MouseDown(i32, i32),
     MouseUp,
     MouseOut,

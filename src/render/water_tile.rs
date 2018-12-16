@@ -13,6 +13,8 @@ use wasm_bindgen::JsCast;
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
 
+static WAVE_SPEED: f32 = 0.10;
+
 impl Render for WaterTile {
     fn shader_kind() -> ShaderKind {
         ShaderKind::Water
@@ -59,6 +61,20 @@ impl Render for WaterTile {
                 .as_ref(),
             TextureUnit::Reflection as i32,
         );
+        gl.uniform1i(
+            gl.get_uniform_location(&shader.program, "dudvTexture")
+                .as_ref(),
+            TextureUnit::Dudv as i32,
+        );
+
+        let seconds_elapsed = state.clock() / 1000.;
+        let dudv_offset = (WAVE_SPEED * seconds_elapsed) % 1.;
+
+        gl.uniform1f(
+            gl.get_uniform_location(&shader.program, "dudvOffset")
+                .as_ref(),
+            dudv_offset,
+        );
 
         gl.uniform_matrix4fv_with_f32_array(model_view_uni, false, &mut model_view_array);
 
@@ -70,17 +86,18 @@ impl Render for WaterTile {
         let perspective_uni = perspective_uni.as_ref();
         gl.uniform_matrix4fv_with_f32_array(perspective_uni, false, &mut perspective_array);
 
-        // TODO: Generate vertices based on WaterTile's fields (pos.. width.. height..)
-        let vertices: [f32; 12] = [
-            -0.5, 0., 0.5, // Bottom Left
-            0.5, 0., 0.5, // Bottom Right
-            0.5, 0., -0.5, // Top Right
-            -0.5, 0., -0.5, // Top Left
+        // FIXME: Explain this better
+        // x and z values, y is ommited since this is a flat surface. We set it in the vertex shader
+        let vertices: [f32; 8] = [
+            -0.5, 0.5, // Bottom Left
+            0.5, 0.5, // Bottom Right
+            0.5, -0.5, // Top Right
+            -0.5, -0.5, // Top Left
         ];
 
         let mut indices: [u16; 6] = [0, 1, 2, 0, 2, 3];
 
-        WaterTile::buffer_f32_data(&gl, &vertices, pos_attrib as u32, 3);
+        WaterTile::buffer_f32_data(&gl, &vertices, pos_attrib as u32, 2);
         WaterTile::buffer_u16_indices(&gl, &mut indices);
 
         gl.draw_elements_with_i32(GL::TRIANGLES, indices.len() as i32, GL::UNSIGNED_SHORT, 0);

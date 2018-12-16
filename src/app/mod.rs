@@ -24,7 +24,7 @@ impl App {
         }
     }
 
-    pub fn assets (&self) -> &Assets {
+    pub fn assets(&self) -> &Assets {
         &self.assets
     }
 }

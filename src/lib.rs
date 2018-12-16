@@ -46,10 +46,14 @@ pub struct WebClient {
     renderer: WebRenderer,
 }
 
-// TODO: Breadcrumb - refactor out the pieces of this file so that we can more easily see what's going on
+mod render;
+use self::render::*;
+
+mod shader; // FIXME: create module file
 
 mod canvas;
 use self::canvas::*;
+use std::cell::RefCell;
 
 #[wasm_bindgen]
 impl WebClient {
@@ -60,7 +64,6 @@ impl WebClient {
 
         let app = Rc::new(App::new());
 
-        // FIXME: Don't need Rc.. Just pass it into places as we need it..
         let gl = Rc::new(create_webgl_context(Rc::clone(&app)).unwrap());
 
         let renderer = WebRenderer::new(&gl);
@@ -72,8 +75,14 @@ impl WebClient {
     /// to begin rendering.
     pub fn start(&self) -> Result<(), JsValue> {
         // FIXME: Request animation frame in here
+        self.create_du_dv_texture(Rc::clone(&self.gl));
 
         Ok(())
+    }
+
+    /// Update our simulation
+    pub fn update(&self, dt: f32) {
+        self.app.store.borrow_mut().msg(&Msg::AdvanceClock(dt));
     }
 
     /// Render the scene. `index.html` will call this once every requestAnimationFrame
@@ -83,8 +92,40 @@ impl WebClient {
     }
 }
 
-mod render;
-use self::render::*;
+impl WebClient {
+    /// FIXME: Better home for this... ... ?
+    fn create_du_dv_texture(&self, gl: Rc<GL>) {
+        let dudv_map = Rc::new(RefCell::new(HtmlImageElement::new().unwrap()));
+        let dudv_map_clone = Rc::clone(&dudv_map);
 
-mod shader; // FIXME: create module file
-use self::shader::*;
+        let onload = Closure::wrap(Box::new(move || {
+            let texture = gl.create_texture();
+
+            gl.active_texture(TextureUnit::Dudv.get());
+
+            gl.bind_texture(GL::TEXTURE_2D, texture.as_ref());
+
+            gl.pixel_storei(GL::UNPACK_FLIP_Y_WEBGL, 1);
+
+            gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MIN_FILTER, GL::NEAREST as i32);
+            gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL::NEAREST as i32);
+
+            gl.tex_image_2d_with_u32_and_u32_and_image(
+                GL::TEXTURE_2D,
+                0,
+                GL::RGBA as i32,
+                GL::RGBA,
+                GL::UNSIGNED_BYTE,
+                &dudv_map_clone.borrow(),
+            )
+            .expect("Dudv tex image 2d");
+        }) as Box<dyn Fn()>);
+
+        let dudv_map = dudv_map.borrow_mut();
+
+        dudv_map.set_onload(Some(onload.as_ref().unchecked_ref()));
+        dudv_map.set_src("/dudvmap.png");
+
+        onload.forget();
+    }
+}

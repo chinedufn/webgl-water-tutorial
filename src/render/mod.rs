@@ -177,14 +177,16 @@ struct Framebuffer {
 pub enum TextureUnit {
     Refraction = 0,
     Reflection = 1,
+    Dudv = 2,
 }
 
 impl TextureUnit {
     // FIXME: Rename
-    fn get(&self) -> u32 {
+    pub fn get(&self) -> u32 {
         match self {
             TextureUnit::Refraction => GL::TEXTURE0,
             TextureUnit::Reflection => GL::TEXTURE1,
+            TextureUnit::Dudv => GL::TEXTURE2,
         }
     }
 }
@@ -203,8 +205,8 @@ impl WebRenderer {
 
         // FIXME: Confirm that these are the proper settings and understand why
         // FIXME: Constant for canvas width and height that we get from the canvas module
-        gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL::NEAREST as i32);
-        gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MIN_FILTER, GL::NEAREST as i32);
+        gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL::LINEAR as i32);
+        gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MIN_FILTER, GL::LINEAR as i32);
         gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_array_buffer_view(
             GL::TEXTURE_2D,
             0,

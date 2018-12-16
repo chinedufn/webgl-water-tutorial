@@ -1,13 +1,20 @@
-attribute vec3 position;
+attribute vec2 position;
 
 uniform mat4 perspective;
 uniform mat4 modelView;
 
 varying vec4 clipSpace;
+varying vec2 textureCoords;
+
+const float tiling = 6.0;
 
 // TODO: Breadcrumb - projective texture mapping of refraction an reflection textures
 void main() {
-    clipSpace = perspective * modelView * vec4(position, 1.0);
+    clipSpace = perspective * modelView * vec4(position.x, 0.0, position.y, 1.0);
 
     gl_Position = clipSpace;
+
+    // (-0.5 < pos < 0.5) -> (0.0 < pos < 1.0)
+    textureCoords = position + 0.5;
+    textureCoords = textureCoords * tiling;
 }
