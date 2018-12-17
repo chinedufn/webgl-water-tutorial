@@ -84,6 +84,7 @@ impl Render for WaterTile {
         let seconds_elapsed = state.clock() / 1000.;
         let dudv_offset = (WAVE_SPEED * seconds_elapsed) % 1.;
 
+        // FIXME: Pass in `program` variable to save repeating `shader` over and over again
         gl.uniform1f(
             gl.get_uniform_location(&shader.program, "dudvOffset")
                 .as_ref(),

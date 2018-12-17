@@ -54,7 +54,6 @@ impl WebRenderer {
 
         self.render_meshes(gl, state, assets, clip_plane, false);
         self.render_water(gl, state, assets);
-        
     }
 
     // FIXME: Fewer args...
