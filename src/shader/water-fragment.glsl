@@ -8,8 +8,6 @@ uniform sampler2D normalMap;
 // FIXME: Uniforms .. to avoid accidentally having different values across shaders
 vec3 sunlightColor = vec3(1.0, 1.0, 1.0);
 vec3 sunlightDir = normalize(vec3(-1.0, -1.0, 0.5));
-const float shineDamper = 20.0;
-const float lightReflectivity = 0.6;
 
 varying vec3 fromFragmentToCamera;
 
@@ -20,7 +18,9 @@ varying vec4 clipSpace;
 
 varying vec2 textureCoords;
 
-const float distortionStrength = 0.02;
+const float waterDistortionStrength = 0.04;
+const float shineDamper = 20.0;
+const float lightReflectivity = 0.5;
 
 void main() {
     // FIXME: Calculate in vertex shader
@@ -35,7 +35,7 @@ void main() {
     distortedTexCoords = textureCoords + vec2(distortedTexCoords.x, distortedTexCoords.y + dudvOffset);
 
     // Between -1 and 1
-    vec2 totalDistortion = (texture2D(dudvTexture, distortedTexCoords).rg * 2.0 - 1.0) * distortionStrength;
+    vec2 totalDistortion = (texture2D(dudvTexture, distortedTexCoords).rg * 2.0 - 1.0) * waterDistortionStrength;
 
     refractTexCoords += totalDistortion;
     reflectTexCoords += totalDistortion;

@@ -31,10 +31,8 @@ pub struct WebRenderer {
 impl WebRenderer {
     pub fn new(gl: &WebGlRenderingContext) -> WebRenderer {
         let shader_sys = ShaderSystem::new(&gl);
-        let refraction_framebuffer =
-            WebRenderer::create_water_framebuffer(&gl, TextureUnit::Refraction).unwrap();
-        let reflection_framebuffer =
-            WebRenderer::create_water_framebuffer(&gl, TextureUnit::Reflection).unwrap();
+        let refraction_framebuffer = WebRenderer::create_refraction_framebuffer(&gl).unwrap();
+        let reflection_framebuffer = WebRenderer::create_reflection_framebuffer(&gl).unwrap();
 
         WebRenderer {
             shader_sys,
@@ -171,7 +169,8 @@ impl WebRenderer {
 
 struct Framebuffer {
     framebuffer: Option<WebGlFramebuffer>,
-    texture: Option<WebGlTexture>,
+    color_texture: Option<WebGlTexture>,
+    depth_texture: Option<WebGlTexture>,
 }
 
 pub enum TextureUnit {
@@ -179,6 +178,7 @@ pub enum TextureUnit {
     Reflection = 1,
     Dudv = 2,
     NormalMap = 3,
+    RefractionDepth = 4,
 }
 
 impl TextureUnit {
@@ -189,22 +189,92 @@ impl TextureUnit {
             TextureUnit::Reflection => GL::TEXTURE1,
             TextureUnit::Dudv => GL::TEXTURE2,
             TextureUnit::NormalMap => GL::TEXTURE3,
+            TextureUnit::RefractionDepth => GL::TEXTURE4,
         }
     }
 }
 
 impl WebRenderer {
-    fn create_water_framebuffer(
-        gl: &WebGlRenderingContext,
-        texture_unit: TextureUnit,
-    ) -> Result<Framebuffer, JsValue> {
+    // TODO: Breadcrumb -> if texture_unit is refraction we need to attach a depth texture
+    fn create_refraction_framebuffer(gl: &WebGlRenderingContext) -> Result<Framebuffer, JsValue> {
         let framebuffer = gl.create_framebuffer();
         gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
 
-        let texture = gl.create_texture();
-        gl.active_texture(texture_unit.get());
-        gl.bind_texture(GL::TEXTURE_2D, texture.as_ref());
+        let color_texture = gl.create_texture();
+        gl.active_texture(TextureUnit::Refraction.get());
+        gl.bind_texture(GL::TEXTURE_2D, color_texture.as_ref());
 
+        gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL::LINEAR as i32);
+        gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MIN_FILTER, GL::LINEAR as i32);
+        gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_array_buffer_view(
+            GL::TEXTURE_2D,
+            0,
+            GL::RGBA as i32,
+            // FIXME: Play with different refratin and reflection sizes to see whwat looks good
+            CANVAS_WIDTH,
+            CANVAS_HEIGHT,
+            0,
+            GL::RGBA as u32,
+            GL::UNSIGNED_BYTE,
+            None,
+        )?;
+
+        let depth_texture_ext = gl
+            .get_extension("WEBGL_depth_texture")
+            .expect("Depth texture extension");
+        let depth_texture = gl.create_texture();
+        gl.active_texture(TextureUnit::RefractionDepth.get());
+        gl.bind_texture(GL::TEXTURE_2D, depth_texture.as_ref());
+        gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL::LINEAR as i32);
+        gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MIN_FILTER, GL::LINEAR as i32);
+
+        // FIXME: Research render buffer so that I understand it and can describe it in comments.
+        // Same with pretty much every WebGL API that we call
+        let renderbuffer = gl.create_renderbuffer();
+        gl.bind_renderbuffer(GL::RENDERBUFFER, renderbuffer.as_ref());
+        gl.renderbuffer_storage(
+            GL::RENDERBUFFER,
+            GL::DEPTH_COMPONENT16,
+            // FIXME: Play with different refratin and reflection sizes to see whwat looks good
+            // Separate constant for refraction and reflection width
+            CANVAS_WIDTH,
+            CANVAS_HEIGHT,
+        );
+
+        gl.framebuffer_texture_2d(
+            GL::FRAMEBUFFER,
+            GL::COLOR_ATTACHMENT0,
+            GL::TEXTURE_2D,
+            color_texture.as_ref(),
+            0,
+        );
+        gl.framebuffer_renderbuffer(
+            GL::FRAMEBUFFER,
+            GL::DEPTH_ATTACHMENT,
+            GL::RENDERBUFFER,
+            renderbuffer.as_ref(),
+        );
+
+        gl.bind_renderbuffer(GL::RENDERBUFFER, None);
+        gl.bind_framebuffer(GL::FRAMEBUFFER, None);
+        //        gl.bind_texture(GL::TEXTURE_2D, None);
+
+        Ok(Framebuffer {
+            framebuffer,
+            color_texture,
+            depth_texture,
+        })
+    }
+
+    // FIXME: Normalize with refraction framebuffer
+    fn create_reflection_framebuffer(gl: &WebGlRenderingContext) -> Result<Framebuffer, JsValue> {
+        let framebuffer = gl.create_framebuffer();
+        gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
+
+        let color_texture = gl.create_texture();
+
+        gl.active_texture(TextureUnit::Reflection.get());
+        gl.bind_texture(GL::TEXTURE_2D, color_texture.as_ref());
         // FIXME: Confirm that these are the proper settings and understand why
         // FIXME: Constant for canvas width and height that we get from the canvas module
         gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL::LINEAR as i32);
@@ -236,7 +306,7 @@ impl WebRenderer {
             GL::FRAMEBUFFER,
             GL::COLOR_ATTACHMENT0,
             GL::TEXTURE_2D,
-            texture.as_ref(),
+            color_texture.as_ref(),
             0,
         );
         gl.framebuffer_renderbuffer(
@@ -248,11 +318,11 @@ impl WebRenderer {
 
         gl.bind_renderbuffer(GL::RENDERBUFFER, None);
         gl.bind_framebuffer(GL::FRAMEBUFFER, None);
-        //        gl.bind_texture(GL::TEXTURE_2D, None);
 
         Ok(Framebuffer {
             framebuffer,
-            texture,
+            color_texture,
+            depth_texture: None,
         })
     }
 }

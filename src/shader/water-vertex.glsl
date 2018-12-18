@@ -10,7 +10,7 @@ varying vec3 fromFragmentToCamera;
 varying vec4 clipSpace;
 varying vec2 textureCoords;
 
-const float tiling = 2.0;
+const float tiling = 4.0;
 
 // TODO: Breadcrumb - projective texture mapping of refraction an reflection textures
 void main() {

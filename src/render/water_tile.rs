@@ -7,12 +7,12 @@ use crate::shader::Shader;
 use crate::shader::ShaderKind;
 use js_sys::WebAssembly;
 use nalgebra;
-use nalgebra::{Isometry3, Matrix4, Point3, Vector3};
+use nalgebra::{Isometry3, Matrix4, Vector3};
 use wasm_bindgen::JsCast;
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
 
-static WAVE_SPEED: f32 = 0.07;
+static WAVE_SPEED: f32 = 0.03;
 
 impl Render for WaterTile {
     fn shader_kind() -> ShaderKind {
