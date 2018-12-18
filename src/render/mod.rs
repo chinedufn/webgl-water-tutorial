@@ -20,6 +20,14 @@ use crate::canvas::CANVAS_WIDTH;
 use crate::render::textured_quad::TexturedQuad;
 use wasm_bindgen::JsValue;
 
+// FIXME: Use these.. Look at framebuffer tutorial (2)
+static REFLECTION_TEXTURE_WIDTH: i32 = 128;
+static REFLECTION_TEXTURE_HEIGHT: i32 = 128;
+
+// FIXME: Experiment with 256x256
+static REFRACTION_TEXTURE_WIDTH: i32 = 512;
+static REFRACTION_TEXTURE_HEIGHT: i32 = 512;
+
 mod textured_quad;
 
 pub struct WebRenderer {
@@ -227,19 +235,18 @@ impl WebRenderer {
         gl.bind_texture(GL::TEXTURE_2D, depth_texture.as_ref());
         gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL::LINEAR as i32);
         gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MIN_FILTER, GL::LINEAR as i32);
-
-        // FIXME: Research render buffer so that I understand it and can describe it in comments.
-        // Same with pretty much every WebGL API that we call
-        let renderbuffer = gl.create_renderbuffer();
-        gl.bind_renderbuffer(GL::RENDERBUFFER, renderbuffer.as_ref());
-        gl.renderbuffer_storage(
-            GL::RENDERBUFFER,
-            GL::DEPTH_COMPONENT16,
+        gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_array_buffer_view(
+            GL::TEXTURE_2D,
+            0,
+            GL::DEPTH_COMPONENT as i32,
             // FIXME: Play with different refratin and reflection sizes to see whwat looks good
-            // Separate constant for refraction and reflection width
             CANVAS_WIDTH,
             CANVAS_HEIGHT,
-        );
+            0,
+            GL::DEPTH_COMPONENT as u32,
+            GL::UNSIGNED_SHORT,
+            None,
+        )?;
 
         gl.framebuffer_texture_2d(
             GL::FRAMEBUFFER,
@@ -248,14 +255,15 @@ impl WebRenderer {
             color_texture.as_ref(),
             0,
         );
-        gl.framebuffer_renderbuffer(
+
+        gl.framebuffer_texture_2d(
             GL::FRAMEBUFFER,
             GL::DEPTH_ATTACHMENT,
-            GL::RENDERBUFFER,
-            renderbuffer.as_ref(),
+            GL::TEXTURE_2D,
+            depth_texture.as_ref(),
+            0,
         );
 
-        gl.bind_renderbuffer(GL::RENDERBUFFER, None);
         gl.bind_framebuffer(GL::FRAMEBUFFER, None);
         //        gl.bind_texture(GL::TEXTURE_2D, None);
 
@@ -318,6 +326,7 @@ impl WebRenderer {
 
         gl.bind_renderbuffer(GL::RENDERBUFFER, None);
         gl.bind_framebuffer(GL::FRAMEBUFFER, None);
+        //        gl.bind_texture(GL::TEXTURE_2D, None);
 
         Ok(Framebuffer {
             framebuffer,
