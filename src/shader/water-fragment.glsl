@@ -48,15 +48,16 @@ void main() {
     // FIXME: Explanation and better name
     // FIXME: Tweak this based on our scene
     // FIXME: Add HTML sliders for a bunch of this stuff
-    float fullOpacityDepth = 0.75;
+    float fullOpacityDepth = 0.005;
 
     vec2 distortedTexCoords = texture2D(dudvTexture, vec2(textureCoords.x + dudvOffset, textureCoords.y)).rg * 0.1;
     distortedTexCoords = textureCoords + vec2(distortedTexCoords.x, distortedTexCoords.y + dudvOffset);
 
     // Between -1 and 1
     vec2 totalDistortion = (texture2D(dudvTexture, distortedTexCoords).rg * 2.0 - 1.0)
-     * waterDistortionStrength;
-//     * clamp(waterToFloor / (fullOpacityDepth * 50.0), 0.0, 1.0);
+     * waterDistortionStrength
+     * clamp(waterToFloor / (fullOpacityDepth * 6.0), 0.0, 1.0);
+//    totalDistortion = vec2(0.0, 0.0);
 
     refractTexCoords += totalDistortion;
     reflectTexCoords += totalDistortion;
@@ -71,7 +72,7 @@ void main() {
     vec3 toCamera = normalize(fromFragmentToCamera);
 
     vec4 normalMapColor = texture2D(normalMap, distortedTexCoords);
-    vec3 normal = vec3(normalMapColor.r * 2.0 - 1.0, normalMapColor.b * 2.5, normalMapColor.g * 2.0 - 1.0);
+    vec3 normal = vec3(normalMapColor.r * 2.0 - 1.0, normalMapColor.b * 2.6, normalMapColor.g * 2.0 - 1.0);
     normal = normalize(normal);
 
     // Fresnel Effect. Looking at the water from above makes the water more transparent.
@@ -84,13 +85,15 @@ void main() {
     vec3 reflectedLight = reflect(normalize(sunlightDir), normal);
     float specular = max(dot(reflectedLight, toCamera), 0.0);
     specular = pow(specular, shineDamper);
-    vec3 specularHighlights = sunlightColor * specular * lightReflectivity;
-//        * clamp(waterToFloor / (fullOpacityDepth * 50.0), 0.0, 1.0);
+    vec3 specularHighlights = sunlightColor * specular * lightReflectivity
+        * clamp(waterToFloor / (fullOpacityDepth * 6.0), 0.0, 1.0);
 
     gl_FragColor = mix(reflectColor, refractColor, refractiveFactor);
     // Mix in a bit of blue so that it looks like water
     gl_FragColor = mix(gl_FragColor, vec4(0.0, 0.3, 0.5, 1.0), 0.2) + vec4(specularHighlights, 0.0);
 
 
-//    gl_FragColor.a = clamp(waterToFloor / fullOpacityDepth, 0.0, 1.0);
+    // FIXME: Remove all of the alpha and water depth blending stuff and see if it makes a difference in our
+    // final scene..
+    gl_FragColor.a = clamp(waterToFloor / fullOpacityDepth, 0.0, 1.0);
 }
