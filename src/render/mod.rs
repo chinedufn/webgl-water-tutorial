@@ -32,6 +32,7 @@ mod textured_quad;
 
 pub struct WebRenderer {
     shader_sys: ShaderSystem,
+    depth_texture_ext: Option<js_sys::Object>,
     refraction_framebuffer: Framebuffer,
     reflection_framebuffer: Framebuffer,
 }
@@ -39,10 +40,16 @@ pub struct WebRenderer {
 impl WebRenderer {
     pub fn new(gl: &WebGlRenderingContext) -> WebRenderer {
         let shader_sys = ShaderSystem::new(&gl);
+
+        let depth_texture_ext = gl
+            .get_extension("WEBGL_depth_texture")
+            .expect("Depth texture extension");
+
         let refraction_framebuffer = WebRenderer::create_refraction_framebuffer(&gl).unwrap();
         let reflection_framebuffer = WebRenderer::create_reflection_framebuffer(&gl).unwrap();
 
         WebRenderer {
+            depth_texture_ext,
             shader_sys,
             refraction_framebuffer,
             reflection_framebuffer,
@@ -227,9 +234,6 @@ impl WebRenderer {
             None,
         )?;
 
-        let depth_texture_ext = gl
-            .get_extension("WEBGL_depth_texture")
-            .expect("Depth texture extension");
         let depth_texture = gl.create_texture();
         gl.active_texture(TextureUnit::RefractionDepth.get());
         gl.bind_texture(GL::TEXTURE_2D, depth_texture.as_ref());
@@ -244,6 +248,9 @@ impl WebRenderer {
             CANVAS_HEIGHT,
             0,
             GL::DEPTH_COMPONENT as u32,
+            // FIXME: UNSIGNED_BYTE should be fine here since we don't need as much precision
+            // since it doesn't matter if there are two objects next to eachother and our
+            // depth is very slightly off. Precision is more important in shadow mapping
             GL::UNSIGNED_SHORT,
             None,
         )?;
@@ -265,7 +272,7 @@ impl WebRenderer {
         );
 
         gl.bind_framebuffer(GL::FRAMEBUFFER, None);
-        //        gl.bind_texture(GL::TEXTURE_2D, None);
+        //                gl.bind_texture(GL::TEXTURE_2D, None);
 
         Ok(Framebuffer {
             framebuffer,
@@ -326,7 +333,7 @@ impl WebRenderer {
 
         gl.bind_renderbuffer(GL::RENDERBUFFER, None);
         gl.bind_framebuffer(GL::FRAMEBUFFER, None);
-        //        gl.bind_texture(GL::TEXTURE_2D, None);
+        //                gl.bind_texture(GL::TEXTURE_2D, None);
 
         Ok(Framebuffer {
             framebuffer,

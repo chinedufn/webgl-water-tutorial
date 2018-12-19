@@ -80,6 +80,11 @@ impl Render for WaterTile {
                 .as_ref(),
             TextureUnit::NormalMap as i32,
         );
+        gl.uniform1i(
+            gl.get_uniform_location(&shader.program, "waterDepthTexture")
+                .as_ref(),
+            TextureUnit::RefractionDepth as i32,
+        );
 
         let seconds_elapsed = state.clock() / 1000.;
         let dudv_offset = (WAVE_SPEED * seconds_elapsed) % 1.;
@@ -122,6 +127,11 @@ impl Render for WaterTile {
         WaterTile::buffer_f32_data(&gl, &vertices, pos_attrib as u32, 2);
         WaterTile::buffer_u16_indices(&gl, &mut indices);
 
+        gl.enable(GL::BLEND);
+        gl.blend_func(GL::SRC_ALPHA, GL::ONE_MINUS_SRC_ALPHA);
+
         gl.draw_elements_with_i32(GL::TRIANGLES, indices.len() as i32, GL::UNSIGNED_SHORT, 0);
+
+        gl.disable(GL::BLEND);
     }
 }

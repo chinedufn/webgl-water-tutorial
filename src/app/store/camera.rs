@@ -13,7 +13,7 @@ impl Camera {
         let fovy = PI / 3.0;
 
         Camera {
-            projection: Perspective3::new(fovy, 1.0, 0.1, 100.0),
+            projection: Perspective3::new(fovy, 1.0, 0.1, 50.0),
             left_right_radians: 45.0f32.to_radians(),
             up_down_radians: 80.0f32.to_radians(),
             orbit_radius: 15.,
@@ -48,7 +48,6 @@ impl Camera {
 
         Point3::new(eye_x, eye_y, eye_z)
     }
-
     pub fn projection(&self) -> &Perspective3<f32> {
         &self.projection
     }
