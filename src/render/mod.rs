@@ -142,6 +142,7 @@ impl WebRenderer {
 
         // FIXME: Base distance on a water tile height variable -0.5
         let water_tile_y = 0.0;
+        // FIXME: Soft edges tutorial talks about how to adjust these clipping planes (near the end)
         let clip_plane = [0., 1., 0., -water_tile_y];
 
         self.render_meshes(gl, state, assets, clip_plane, true);

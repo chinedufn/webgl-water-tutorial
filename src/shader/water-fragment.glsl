@@ -80,6 +80,8 @@ void main() {
 
     // A higher power makes the water more reflective since the refractive factor will decrease
     // FIXME: Control refractiveFactor with a slider. Call it the fresnel effect slider
+    //  make these small and compact so that we can add a bunch of them in and really play
+    //  with making the best scene. Do this after finalizing the scenery
     refractiveFactor = pow(refractiveFactor, 1.5);
 
     vec3 reflectedLight = reflect(normalize(sunlightDir), normal);
