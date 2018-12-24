@@ -28,7 +28,7 @@ impl Render for WaterTile {
             .unwrap()
             .buffer();
 
-        let pos = (0., -0.5, 0.);
+        let pos = (0., 0.0, 0.);
 
         // FIXME: Move some of this to the trait for re-usability. Then normalize with mesh.rs
         let view = state.camera().view();

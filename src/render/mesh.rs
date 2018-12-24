@@ -12,6 +12,7 @@ use nalgebra::{Isometry3, Point3, Vector3};
 use wasm_bindgen::JsCast;
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
+use crate::render::TextureUnit;
 
 pub struct RenderableMesh<'a> {
     pub mesh: &'a BlenderMesh,
@@ -36,11 +37,15 @@ impl<'a> Render for RenderableMesh<'a> {
         let opts = self.opts;
         let pos = opts.pos;
 
+        // FIXME: Use VAO's
         let pos_attrib = gl.get_attrib_location(&shader.program, "position");
         gl.enable_vertex_attrib_array(pos_attrib as u32);
 
         let normal_attrib = gl.get_attrib_location(&shader.program, "normal");
         gl.enable_vertex_attrib_array(normal_attrib as u32);
+
+        let uv_attrib =  gl.get_attrib_location(&shader.program, "uvs");
+        gl.enable_vertex_attrib_array(uv_attrib as u32);
 
         let view = if opts.flip_camera_y {
             state.camera().view_flipped_y()
@@ -78,10 +83,30 @@ impl<'a> Render for RenderableMesh<'a> {
         // FIXME: Get rid of clone.. needed atm since render func isn't mut
         gl.uniform4fv_with_f32_array(clip_plane_uni, &mut opts.clip_plane.clone()[..]);
 
+        let camera_pos = state.camera().get_eye_pos();
+        let mut camera_pos = [camera_pos.x, camera_pos.y, camera_pos.z];
+
+        gl.uniform3fv_with_f32_array(
+            gl.get_uniform_location(&shader.program, "cameraPos")
+                .as_ref(),
+            &mut camera_pos,
+        );
+
+
+        // FIXME: We should only do this once and cache it in the `shader`
+        // Shader.get_uniform_location ... Shader.uniforms: HashMap<String, u8>
+        // This way we don't hit the GPU over and over again for no reason
+        gl.uniform1i(
+            gl.get_uniform_location(&shader.program, "meshTexture")
+                .as_ref(),
+            TextureUnit::Stone as i32,
+        );
+
         let indices = &mesh.vertex_position_indices[..];
 
         RenderableMesh::buffer_f32_data(&gl, &mesh.vertex_positions[..], pos_attrib as u32, 3);
         RenderableMesh::buffer_f32_data(&gl, &mesh.vertex_normals[..], normal_attrib as u32, 3);
+        RenderableMesh::buffer_f32_data(&gl, &mesh.vertex_uvs.as_ref().expect("Mesh uvs")[..], uv_attrib as u32, 2);
         RenderableMesh::buffer_u16_indices(&gl, indices);
 
         gl.draw_elements_with_i32(GL::TRIANGLES, indices.len() as i32, GL::UNSIGNED_SHORT, 0);

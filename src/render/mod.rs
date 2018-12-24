@@ -195,6 +195,7 @@ pub enum TextureUnit {
     Dudv = 2,
     NormalMap = 3,
     RefractionDepth = 4,
+    Stone = 5,
 }
 
 impl TextureUnit {
@@ -206,6 +207,7 @@ impl TextureUnit {
             TextureUnit::Dudv => GL::TEXTURE2,
             TextureUnit::NormalMap => GL::TEXTURE3,
             TextureUnit::RefractionDepth => GL::TEXTURE4,
+            TextureUnit::Stone => GL::TEXTURE5
         }
     }
 }
