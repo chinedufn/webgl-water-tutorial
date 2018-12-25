@@ -19,7 +19,7 @@ varying vec4 clipSpace;
 
 varying vec2 textureCoords;
 
-const float waterDistortionStrength = 0.04;
+const float waterDistortionStrength = 0.03;
 const float shineDamper = 20.0;
 const float lightReflectivity = 0.5;
 
@@ -57,7 +57,6 @@ void main() {
     vec2 totalDistortion = (texture2D(dudvTexture, distortedTexCoords).rg * 2.0 - 1.0)
      * waterDistortionStrength
      * clamp(waterToFloor / (fullOpacityDepth * 6.0), 0.0, 1.0);
-//    totalDistortion = vec2(0.0, 0.0);
 
     refractTexCoords += totalDistortion;
     reflectTexCoords += totalDistortion;
@@ -66,8 +65,13 @@ void main() {
     reflectTexCoords.x = clamp(reflectTexCoords.x, 0.001, 0.999);
     reflectTexCoords.y = clamp(reflectTexCoords.y, -0.999, -0.001);
 
-    vec4 refractColor = texture2D(refractionTexture, refractTexCoords);
     vec4 reflectColor = texture2D(reflectionTexture, reflectTexCoords);
+
+    vec4 shallowWaterColor =  vec4(0.0, 0.1, 0.3, 1.0);
+    vec4 deepWaterColor = vec4(0.0, 0.1, 0.2, 1.0);
+
+    vec4 refractColor = texture2D(refractionTexture, refractTexCoords);
+    refractColor = mix(refractColor, deepWaterColor, clamp(waterToFloor/10.0, 0.0, 1.0));
 
     vec3 toCamera = normalize(fromFragmentToCamera);
 
@@ -92,7 +96,7 @@ void main() {
 
     gl_FragColor = mix(reflectColor, refractColor, refractiveFactor);
     // Mix in a bit of blue so that it looks like water
-    gl_FragColor = mix(gl_FragColor, vec4(0.0, 0.3, 0.5, 1.0), 0.2) + vec4(specularHighlights, 0.0);
+    gl_FragColor = mix(gl_FragColor, shallowWaterColor, 0.2) + vec4(specularHighlights, 0.0);
 
 
     // FIXME: Remove all of the alpha and water depth blending stuff and see if it makes a difference in our

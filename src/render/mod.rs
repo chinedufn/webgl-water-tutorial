@@ -1,3 +1,4 @@
+use self::framebuffer::*;
 use self::mesh::*;
 pub(self) use self::render_trait::*;
 use self::water_tile::*;
@@ -18,18 +19,12 @@ use wasm_bindgen::JsValue;
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
 
+mod framebuffer;
 mod mesh;
 mod render_trait;
 mod textured_quad;
 mod water_tile;
 
-// FIXME: Use these.. Look at framebuffer tutorial (2)
-static REFLECTION_TEXTURE_WIDTH: i32 = 128;
-static REFLECTION_TEXTURE_HEIGHT: i32 = 128;
-
-// FIXME: Experiment with 256x256
-static REFRACTION_TEXTURE_WIDTH: i32 = 512;
-static REFRACTION_TEXTURE_HEIGHT: i32 = 512;
 
 struct VAO_Extension {
     oes_vao_ext: js_sys::Object,
@@ -191,7 +186,7 @@ impl WebRenderer {
             TextureUnit::Refraction as u8,
             quad_shader,
         );
-        self.prepare(gl, &textured_quad, "TexturedQuad");
+        self.prepare(gl, &textured_quad, "RefractionVisual");
         textured_quad.render(gl, state, assets);
     }
 
@@ -210,7 +205,7 @@ impl WebRenderer {
             quad_shader,
         );
 
-        self.prepare(gl, &textured_quad, "TexturedQuad");
+        self.prepare(gl, &textured_quad, "ReflectionVisual");
         textured_quad.render(gl, state, assets);
     }
 
@@ -223,7 +218,8 @@ impl WebRenderer {
             .into();
 
         Reflect::apply(&create_vao_ext, oes_vao_ext, &js_sys::Array::new())
-            .expect("Created vao").into()
+            .expect("Created vao")
+            .into()
     }
 
     // FIXME: Rename... Just getting it working
@@ -255,13 +251,6 @@ impl WebRenderer {
         Reflect::apply(&bind_vao_ext, oes_vao_ext, &args).expect("Bound VAO");
     }
 }
-
-struct Framebuffer {
-    framebuffer: Option<WebGlFramebuffer>,
-    color_texture: Option<WebGlTexture>,
-    depth_texture: Option<WebGlTexture>,
-}
-
 pub enum TextureUnit {
     Refraction = 0,
     Reflection = 1,
@@ -282,137 +271,5 @@ impl TextureUnit {
             TextureUnit::RefractionDepth => GL::TEXTURE4,
             TextureUnit::Stone => GL::TEXTURE5,
         }
-    }
-}
-
-impl WebRenderer {
-    fn create_refraction_framebuffer(gl: &WebGlRenderingContext) -> Result<Framebuffer, JsValue> {
-        let framebuffer = gl.create_framebuffer();
-        gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
-
-        let color_texture = gl.create_texture();
-        gl.active_texture(TextureUnit::Refraction.get());
-        gl.bind_texture(GL::TEXTURE_2D, color_texture.as_ref());
-
-        gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL::LINEAR as i32);
-        gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MIN_FILTER, GL::LINEAR as i32);
-        gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_array_buffer_view(
-            GL::TEXTURE_2D,
-            0,
-            GL::RGBA as i32,
-            // FIXME: Play with different refratin and reflection sizes to see whwat looks good
-            CANVAS_WIDTH,
-            CANVAS_HEIGHT,
-            0,
-            GL::RGBA as u32,
-            GL::UNSIGNED_BYTE,
-            None,
-        )?;
-
-        let depth_texture = gl.create_texture();
-        gl.active_texture(TextureUnit::RefractionDepth.get());
-        gl.bind_texture(GL::TEXTURE_2D, depth_texture.as_ref());
-        gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL::LINEAR as i32);
-        gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MIN_FILTER, GL::LINEAR as i32);
-        gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_array_buffer_view(
-            GL::TEXTURE_2D,
-            0,
-            GL::DEPTH_COMPONENT as i32,
-            // FIXME: Play with different refratin and reflection sizes to see whwat looks good
-            CANVAS_WIDTH,
-            CANVAS_HEIGHT,
-            0,
-            GL::DEPTH_COMPONENT as u32,
-            // FIXME: UNSIGNED_BYTE should be fine here since we don't need as much precision
-            // since it doesn't matter if there are two objects next to eachother and our
-            // depth is very slightly off. Precision is more important in shadow mapping
-            GL::UNSIGNED_SHORT,
-            None,
-        )?;
-
-        gl.framebuffer_texture_2d(
-            GL::FRAMEBUFFER,
-            GL::COLOR_ATTACHMENT0,
-            GL::TEXTURE_2D,
-            color_texture.as_ref(),
-            0,
-        );
-
-        gl.framebuffer_texture_2d(
-            GL::FRAMEBUFFER,
-            GL::DEPTH_ATTACHMENT,
-            GL::TEXTURE_2D,
-            depth_texture.as_ref(),
-            0,
-        );
-
-        gl.bind_framebuffer(GL::FRAMEBUFFER, None);
-        //                gl.bind_texture(GL::TEXTURE_2D, None);
-
-        Ok(Framebuffer {
-            framebuffer,
-            color_texture,
-            depth_texture,
-        })
-    }
-
-    // FIXME: Normalize with refraction framebuffer
-    fn create_reflection_framebuffer(gl: &WebGlRenderingContext) -> Result<Framebuffer, JsValue> {
-        let framebuffer = gl.create_framebuffer();
-        gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
-
-        let color_texture = gl.create_texture();
-
-        gl.active_texture(TextureUnit::Reflection.get());
-        gl.bind_texture(GL::TEXTURE_2D, color_texture.as_ref());
-        // FIXME: Constant for canvas width and height that we get from the canvas module
-        gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL::LINEAR as i32);
-        gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MIN_FILTER, GL::LINEAR as i32);
-        gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_array_buffer_view(
-            GL::TEXTURE_2D,
-            0,
-            GL::RGBA as i32,
-            CANVAS_WIDTH,
-            CANVAS_HEIGHT,
-            0,
-            GL::RGBA as u32,
-            GL::UNSIGNED_BYTE,
-            None,
-        )?;
-
-        // FIXME: Research render buffer so that I understand it and can describe it in comments.
-        // Same with pretty much every WebGL API that we call
-        let renderbuffer = gl.create_renderbuffer();
-        gl.bind_renderbuffer(GL::RENDERBUFFER, renderbuffer.as_ref());
-        gl.renderbuffer_storage(
-            GL::RENDERBUFFER,
-            GL::DEPTH_COMPONENT16,
-            CANVAS_WIDTH,
-            CANVAS_HEIGHT,
-        );
-
-        gl.framebuffer_texture_2d(
-            GL::FRAMEBUFFER,
-            GL::COLOR_ATTACHMENT0,
-            GL::TEXTURE_2D,
-            color_texture.as_ref(),
-            0,
-        );
-        gl.framebuffer_renderbuffer(
-            GL::FRAMEBUFFER,
-            GL::DEPTH_ATTACHMENT,
-            GL::RENDERBUFFER,
-            renderbuffer.as_ref(),
-        );
-
-        gl.bind_renderbuffer(GL::RENDERBUFFER, None);
-        gl.bind_framebuffer(GL::FRAMEBUFFER, None);
-        //                gl.bind_texture(GL::TEXTURE_2D, None);
-
-        Ok(Framebuffer {
-            framebuffer,
-            color_texture,
-            depth_texture: None,
-        })
     }
 }

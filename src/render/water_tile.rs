@@ -9,7 +9,7 @@ use nalgebra::{Isometry3, Matrix4, Vector3};
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
 
-static WAVE_SPEED: f32 = 0.03;
+static WAVE_SPEED: f32 = 0.06;
 
 pub struct RenderableWaterTile<'a> {
     shader: &'a Shader,
