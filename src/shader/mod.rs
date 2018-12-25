@@ -1,8 +1,7 @@
 use nalgebra;
-use nalgebra::{Matrix4, Perspective3, Point3, Vector3};
+use nalgebra::{Perspective3, Point3, Vector3};
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use web_sys::*;
 
@@ -14,6 +13,8 @@ impl ShaderSystem {
     pub fn new(gl: &WebGlRenderingContext) -> ShaderSystem {
         let mut programs = HashMap::new();
 
+        // FIXME: Normalize
+
         programs.insert(
             ShaderKind::Water,
             Shader::new(
@@ -23,15 +24,27 @@ impl ShaderSystem {
             )
             .unwrap(),
         );
+
         programs.insert(
-            ShaderKind::Mesh,
+            ShaderKind::NonSkinnedMesh,
             Shader::new(
                 &gl,
-                include_str!("mesh-non-skinned-vertex.glsl"),
-                include_str!("mesh-non-skinned-fragment.glsl"),
+                include_str!("./mesh-non-skinned-vertex.glsl"),
+                include_str!("./mesh-non-skinned-fragment.glsl"),
             )
             .unwrap(),
         );
+
+        programs.insert(
+            ShaderKind::SkinnedMesh,
+            Shader::new(
+                &gl,
+                include_str!("./mesh-skinned-vertex.glsl"),
+                include_str!("./mesh-skinned-fragment.glsl"),
+            )
+            .unwrap(),
+        );
+
         programs.insert(
             ShaderKind::TexturedQuad,
             Shader::new(
@@ -53,7 +66,8 @@ impl ShaderSystem {
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum ShaderKind {
     Water,
-    Mesh,
+    NonSkinnedMesh,
+    SkinnedMesh,
     TexturedQuad,
 }
 
@@ -91,8 +105,8 @@ impl Shader {
         if uniforms.get(uniform_name).is_none() {
             uniforms.insert(
                 uniform_name.to_string(),
-                    gl.get_uniform_location(&self.program, uniform_name)
-                        .expect("Uniform"),
+                gl.get_uniform_location(&self.program, uniform_name)
+                    .expect(&format!(r#"Uniform '{}' not found"#, uniform_name)),
             );
         }
 

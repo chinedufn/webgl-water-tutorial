@@ -44,6 +44,7 @@ impl State {
         &self.camera
     }
 
+    /// The current time in milliseconds
     pub fn clock(&self) -> f32 {
         self.clock
     }

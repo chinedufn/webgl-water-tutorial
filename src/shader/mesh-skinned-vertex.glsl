@@ -17,26 +17,13 @@ varying vec3 fromFragmentToCamera;
 
 uniform vec4 clipPlane;
 
-void main (void) {
-
-}
-
-attribute vec3 position;
-attribute vec3 normal;
-
 attribute vec4 jointIndices;
 attribute vec4 jointWeights;
 
 uniform vec3 ambientColor;
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 perspective;
-
 uniform vec4 boneRotQuaternions[20];
 uniform vec4 boneTransQuaternions[20];
-
-varying vec3 vLightWeighting;
 
 void main (void) {
   // Blend our dual quaternion
@@ -110,22 +97,18 @@ void main (void) {
   transformedNormal.y = y;
   transformedNormal.z = z;
 
-  vNormal = transformedNormal;
-
   // Blender uses a right handed coordinate system. We convert to left handed here
-  vec4 leftWorldPosition = convertedMatrix * vec4(position, 1.0);
-  y = leftWorldPosition.z;
-  z = -leftWorldPosition.y;
-  leftWorldPosition.y = y;
-  leftWorldPosition.z = z;
+  vec4 leftModelSpacePos = convertedMatrix * vec4(position, 1.0);
+  y = leftModelSpacePos.z;
+  z = -leftModelSpacePos.y;
+  leftModelSpacePos.y = y;
+  leftModelSpacePos.z = z;
 
-  shouldClip = dot(leftWorldPosition, clipPlane) < 0.0 ? 1.0 : 0.0;
+  gl_Position = perspective * view * model * leftModelSpacePos;
 
-  vNormal = normal;
-  vWorldPos = worldPosition.xyz;
-  fromFragmentToCamera = cameraPos - worldPosition.xyz;
-
+  shouldClip = dot(leftModelSpacePos, clipPlane) < 0.0 ? 1.0 : 0.0;
+  vNormal = transformedNormal;
+  vWorldPos = leftModelSpacePos.xyz;
   vUvs = uvs;
-
-  gl_Position = perspective * view * leftHandedPosition;
+  fromFragmentToCamera = cameraPos - leftModelSpacePos.xyz;
 }

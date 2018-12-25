@@ -10,7 +10,7 @@ use nalgebra::{Isometry3, Vector3};
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
 
-pub struct RenderableMesh<'a> {
+pub struct NonSkinnedMesh<'a> {
     pub mesh: &'a BlenderMesh,
     pub shader: &'a Shader,
     pub opts: &'a MeshRenderOpts,
@@ -24,13 +24,36 @@ pub struct MeshRenderOpts {
     pub flip_camera_y: bool,
 }
 
-impl<'a> Render<'a> for RenderableMesh<'a> {
+impl<'a> Render<'a> for NonSkinnedMesh<'a> {
     fn shader_kind() -> ShaderKind {
-        ShaderKind::Mesh
+        ShaderKind::NonSkinnedMesh
     }
 
     fn shader(&'a self) -> &'a Shader {
         &self.shader
+    }
+
+    fn buffer_attributes(&self, gl: &WebGlRenderingContext) {
+        let shader = self.shader();
+        let mesh = self.mesh;
+
+        let pos_attrib = gl.get_attrib_location(&shader.program, "position");
+        let normal_attrib = gl.get_attrib_location(&shader.program, "normal");
+        let uv_attrib = gl.get_attrib_location(&shader.program, "uvs");
+
+        gl.enable_vertex_attrib_array(pos_attrib as u32);
+        gl.enable_vertex_attrib_array(normal_attrib as u32);
+        gl.enable_vertex_attrib_array(uv_attrib as u32);
+
+        NonSkinnedMesh::buffer_f32_data(&gl, &mesh.vertex_positions[..], pos_attrib as u32, 3);
+        NonSkinnedMesh::buffer_f32_data(&gl, &mesh.vertex_normals[..], normal_attrib as u32, 3);
+        NonSkinnedMesh::buffer_f32_data(
+            &gl,
+            &mesh.vertex_uvs.as_ref().expect("Mesh uvs")[..],
+            uv_attrib as u32,
+            2,
+        );
+        NonSkinnedMesh::buffer_u16_indices(&gl, &mesh.vertex_position_indices[..]);
     }
 
     fn render(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
@@ -86,28 +109,5 @@ impl<'a> Render<'a> for RenderableMesh<'a> {
 
         let num_indices = mesh.vertex_position_indices.len();
         gl.draw_elements_with_i32(GL::TRIANGLES, num_indices as i32, GL::UNSIGNED_SHORT, 0);
-    }
-
-    fn buffer_attributes(&self, gl: &WebGlRenderingContext) {
-        let shader = self.shader();
-        let mesh = self.mesh;
-
-        let pos_attrib = gl.get_attrib_location(&shader.program, "position");
-        let normal_attrib = gl.get_attrib_location(&shader.program, "normal");
-        let uv_attrib = gl.get_attrib_location(&shader.program, "uvs");
-
-        gl.enable_vertex_attrib_array(pos_attrib as u32);
-        gl.enable_vertex_attrib_array(normal_attrib as u32);
-        gl.enable_vertex_attrib_array(uv_attrib as u32);
-
-        RenderableMesh::buffer_f32_data(&gl, &mesh.vertex_positions[..], pos_attrib as u32, 3);
-        RenderableMesh::buffer_f32_data(&gl, &mesh.vertex_normals[..], normal_attrib as u32, 3);
-        RenderableMesh::buffer_f32_data(
-            &gl,
-            &mesh.vertex_uvs.as_ref().expect("Mesh uvs")[..],
-            uv_attrib as u32,
-            2,
-        );
-        RenderableMesh::buffer_u16_indices(&gl, &mesh.vertex_position_indices[..]);
     }
 }

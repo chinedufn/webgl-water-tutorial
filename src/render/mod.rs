@@ -91,8 +91,11 @@ impl WebRenderer {
         clip_plane: [f32; 4],
         flip_camera_y: bool,
     ) {
-        let mesh_shader = self.shader_sys.get_shader(&ShaderKind::Mesh).unwrap();
-        gl.use_program(Some(&mesh_shader.program));
+        let non_skinned_shader = self
+            .shader_sys
+            .get_shader(&ShaderKind::NonSkinnedMesh)
+            .unwrap();
+        gl.use_program(Some(&non_skinned_shader.program));
 
         let mesh_opts = MeshRenderOpts {
             pos: (0., 0., 0.),
@@ -101,9 +104,9 @@ impl WebRenderer {
         };
 
         let mesh_name = "Terrain";
-        let terrain = RenderableMesh {
+        let terrain = NonSkinnedMesh {
             mesh: assets.get_mesh(mesh_name).expect("Terrain mesh"),
-            shader: mesh_shader,
+            shader: non_skinned_shader,
             opts: &mesh_opts,
         };
 
@@ -114,6 +117,13 @@ impl WebRenderer {
 
         // FIXME: Normalize with above
 
+        let skinned_shader = self
+            .shader_sys
+            .get_shader(&ShaderKind::SkinnedMesh)
+            .unwrap();
+        gl.use_program(Some(&skinned_shader.program));
+
+
         let mesh_opts = MeshRenderOpts {
             pos: (0., 10., 0.),
             clip_plane,
@@ -121,9 +131,11 @@ impl WebRenderer {
         };
 
         let mesh_name = "Bird";
-        let bird = RenderableMesh {
+        let armature_name = "Armature.001";
+        let bird = SkinnedMesh {
             mesh: assets.get_mesh(mesh_name).expect("Bird mesh"),
-            shader: mesh_shader,
+            armature: assets.get_armature(armature_name).expect("Bird armature"),
+            shader: skinned_shader,
             opts: &mesh_opts,
         };
 

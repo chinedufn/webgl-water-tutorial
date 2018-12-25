@@ -31,8 +31,6 @@ fn main() {
     }
 
     let blender_stdout = landon::export_blender_data(&blender_files).unwrap();
-    let mut f = File::create("./stdout").unwrap();
-    f.write_all(blender_stdout.as_bytes()).unwrap();
 
     let meshes_by_file = blender_mesh::parse_meshes_from_blender_stdout(&blender_stdout).unwrap();
     let flattened_meshes = blender_mesh::flatten_exported_meshes(&meshes_by_file).unwrap();
@@ -44,9 +42,11 @@ fn main() {
     let armatures_by_file =
         blender_armature::parse_armatures_from_blender_stdout(&blender_stdout).unwrap();
 
-    let flattened_armatures =
+    let mut flattened_armatures =
         blender_armature::flatten_exported_armatures(&armatures_by_file).unwrap();
+
     let flattened_armatures = bincode::serialize(&flattened_armatures).unwrap();
+
 
     let mut f = File::create("./armatures.bytes").unwrap();
     f.write_all(&flattened_armatures[..]).unwrap();

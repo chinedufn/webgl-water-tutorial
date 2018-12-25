@@ -27,7 +27,12 @@ impl Assets {
             web_sys::console::log_1(&mesh_name.to_string().into());
             mesh.combine_vertex_indices();
             mesh.triangulate();
-            mesh.y_up();
+
+            if let Some(_armature_name) = mesh.armature_name.as_ref() {
+                mesh.set_groups_per_vertex(4);
+            } else {
+                mesh.y_up();
+            }
         }
 
         meshes
@@ -53,5 +58,9 @@ impl Assets {
 
     pub fn get_mesh(&self, mesh_name: &str) -> Option<&BlenderMesh> {
         self.meshes.get(mesh_name)
+    }
+
+    pub fn get_armature(&self, armature_name: &str) -> Option<&BlenderArmature> {
+        self.armatures.get(armature_name)
     }
 }
