@@ -57,11 +57,8 @@ impl<'a> Render<'a> for TexturedQuad<'a> {
 
         let vertex_data = self.make_textured_quad_vertices(CANVAS_WIDTH, CANVAS_HEIGHT);
 
-        // FIXME: We should only do this once and cache it in the `shader`
-        // Shader.get_uniform_location ... Shader.uniforms: HashMap<String, u8>
-        // This way we don't hit the GPU over and over again for no reason
         gl.uniform1i(
-            gl.get_uniform_location(&shader.program, "texture").as_ref(),
+            shader.get_uniform_location(gl, "texture").as_ref(),
             self.texture_unit as i32,
         );
 

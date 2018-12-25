@@ -50,6 +50,13 @@ impl<'a> Render<'a> for RenderableMesh<'a> {
         let uv_attrib = gl.get_attrib_location(&shader.program, "uvs");
         gl.enable_vertex_attrib_array(uv_attrib as u32);
 
+        let model_uni = shader.get_uniform_location(gl, "model");
+        let view_uni = shader.get_uniform_location(gl, "view");
+        let camera_pos_uni = shader.get_uniform_location(gl, "cameraPos");
+        let perspective_uni = shader.get_uniform_location(gl, "perspective");
+        let clip_plane_uni = shader.get_uniform_location(gl, "clipPlane");
+        let mesh_texture_uni = shader.get_uniform_location(gl, "meshTexture");
+
         let view = if opts.flip_camera_y {
             state.camera().view_flipped_y()
         } else {
@@ -64,47 +71,28 @@ impl<'a> Render<'a> for RenderableMesh<'a> {
         model_array.copy_from_slice(model.to_homogeneous().as_slice());
         view_array.copy_from_slice(view.to_homogeneous().as_slice());
 
-        let model_uni = gl.get_uniform_location(&shader.program, "model");
-        let model_uni = model_uni.as_ref();
-
-        let view_uni = gl.get_uniform_location(&shader.program, "view");
-        let view_uni = view_uni.as_ref();
-
-        gl.uniform_matrix4fv_with_f32_array(model_uni, false, &mut model_array);
-        gl.uniform_matrix4fv_with_f32_array(view_uni, false, &mut view_array);
-
         let perspective = state.camera().projection();
         let mut perspective_array = [0.; 16];
         perspective_array.copy_from_slice(perspective.as_matrix().as_slice());
 
-        let perspective_uni = gl.get_uniform_location(&shader.program, "perspective");
-        let perspective_uni = perspective_uni.as_ref();
-        gl.uniform_matrix4fv_with_f32_array(perspective_uni, false, &mut perspective_array);
-
-        let clip_plane_uni = gl.get_uniform_location(&shader.program, "clipPlane");
-        let clip_plane_uni = clip_plane_uni.as_ref();
-        // FIXME: Get rid of clone.. needed atm since render func isn't mut
-        gl.uniform4fv_with_f32_array(clip_plane_uni, &mut opts.clip_plane.clone()[..]);
-
         let camera_pos = state.camera().get_eye_pos();
         let mut camera_pos = [camera_pos.x, camera_pos.y, camera_pos.z];
 
-        gl.uniform3fv_with_f32_array(
-            gl.get_uniform_location(&shader.program, "cameraPos")
-                .as_ref(),
-            &mut camera_pos,
-        );
-
-        // FIXME: We should only do this once and cache it in the `shader`
-        // Shader.get_uniform_location ... Shader.uniforms: HashMap<String, u8>
-        // This way we don't hit the GPU over and over again for no reason
-        gl.uniform1i(
-            gl.get_uniform_location(&shader.program, "meshTexture")
-                .as_ref(),
-            TextureUnit::Stone as i32,
-        );
-
         let indices = &mesh.vertex_position_indices[..];
+
+        // FIXME: Get rid of clone.. needed atm since render func isn't mut
+        gl.uniform4fv_with_f32_array(clip_plane_uni.as_ref(), &mut opts.clip_plane.clone()[..]);
+
+        gl.uniform3fv_with_f32_array(camera_pos_uni.as_ref(), &mut camera_pos);
+        gl.uniform1i(mesh_texture_uni.as_ref(), TextureUnit::Stone as i32);
+        gl.uniform_matrix4fv_with_f32_array(
+            perspective_uni.as_ref(),
+            false,
+            &mut perspective_array,
+        );
+
+        gl.uniform_matrix4fv_with_f32_array(model_uni.as_ref(), false, &mut model_array);
+        gl.uniform_matrix4fv_with_f32_array(view_uni.as_ref(), false, &mut view_array);
 
         RenderableMesh::buffer_f32_data(&gl, &mesh.vertex_positions[..], pos_attrib as u32, 3);
         RenderableMesh::buffer_f32_data(&gl, &mesh.vertex_normals[..], normal_attrib as u32, 3);
