@@ -26,7 +26,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 mod app;
-use self::app::*;
+pub (in crate) use self::app::*;
 use wasm_bindgen::JsCast;
 use web_sys::WebGlRenderingContext as GL;
 /// web_sys gives us access to browser APIs such as HtmlCanvasElement and WebGlRenderingContext
@@ -86,7 +86,7 @@ impl WebClient {
     }
 
     /// Render the scene. `index.html` will call this once every requestAnimationFrame
-    pub fn render(&self) {
+    pub fn render(&mut self) {
         self.renderer
             .render(&self.gl, &self.app.store.borrow().state, &self.app.assets());
     }

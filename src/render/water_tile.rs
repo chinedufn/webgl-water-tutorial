@@ -30,11 +30,29 @@ impl<'a> Render<'a> for RenderableWaterTile<'a> {
         &self.shader
     }
 
-    fn render(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+    fn buffer_attributes(&self, gl: &WebGlRenderingContext) {
         let shader = self.shader();
 
         let pos_attrib = gl.get_attrib_location(&shader.program, "position");
         gl.enable_vertex_attrib_array(pos_attrib as u32);
+
+        // FIXME: Explain this better
+        // x and z values, y is omitted since this is a flat surface. We set it in the vertex shader
+        let vertices: [f32; 8] = [
+            -0.5, 0.5, // Bottom Left
+            0.5, 0.5, // Bottom Right
+            0.5, -0.5, // Top Right
+            -0.5, -0.5, // Top Left
+        ];
+
+        let mut indices: [u16; 6] = [0, 1, 2, 0, 2, 3];
+
+        RenderableWaterTile::buffer_f32_data(&gl, &vertices, pos_attrib as u32, 2);
+        RenderableWaterTile::buffer_u16_indices(&gl, &mut indices);
+    }
+
+    fn render(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+        let shader = self.shader();
 
         let model_uni = shader.get_uniform_location(gl, "model");
         let view_uni = shader.get_uniform_location(gl, "view");
@@ -103,24 +121,10 @@ impl<'a> Render<'a> for RenderableWaterTile<'a> {
             &mut perspective_array,
         );
 
-        // FIXME: Explain this better
-        // x and z values, y is omitted since this is a flat surface. We set it in the vertex shader
-        let vertices: [f32; 8] = [
-            -0.5, 0.5, // Bottom Left
-            0.5, 0.5, // Bottom Right
-            0.5, -0.5, // Top Right
-            -0.5, -0.5, // Top Left
-        ];
-
-        let mut indices: [u16; 6] = [0, 1, 2, 0, 2, 3];
-
-        RenderableWaterTile::buffer_f32_data(&gl, &vertices, pos_attrib as u32, 2);
-        RenderableWaterTile::buffer_u16_indices(&gl, &mut indices);
-
         gl.enable(GL::BLEND);
         gl.blend_func(GL::SRC_ALPHA, GL::ONE_MINUS_SRC_ALPHA);
 
-        gl.draw_elements_with_i32(GL::TRIANGLES, indices.len() as i32, GL::UNSIGNED_SHORT, 0);
+        gl.draw_elements_with_i32(GL::TRIANGLES, 6, GL::UNSIGNED_SHORT, 0);
 
         gl.disable(GL::BLEND);
     }

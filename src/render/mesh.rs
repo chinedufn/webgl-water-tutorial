@@ -41,14 +41,6 @@ impl<'a> Render<'a> for RenderableMesh<'a> {
         let pos = opts.pos;
 
         // FIXME: Use VAO's
-        let pos_attrib = gl.get_attrib_location(&shader.program, "position");
-        gl.enable_vertex_attrib_array(pos_attrib as u32);
-
-        let normal_attrib = gl.get_attrib_location(&shader.program, "normal");
-        gl.enable_vertex_attrib_array(normal_attrib as u32);
-
-        let uv_attrib = gl.get_attrib_location(&shader.program, "uvs");
-        gl.enable_vertex_attrib_array(uv_attrib as u32);
 
         let model_uni = shader.get_uniform_location(gl, "model");
         let view_uni = shader.get_uniform_location(gl, "view");
@@ -78,8 +70,6 @@ impl<'a> Render<'a> for RenderableMesh<'a> {
         let camera_pos = state.camera().get_eye_pos();
         let mut camera_pos = [camera_pos.x, camera_pos.y, camera_pos.z];
 
-        let indices = &mesh.vertex_position_indices[..];
-
         // FIXME: Get rid of clone.. needed atm since render func isn't mut
         gl.uniform4fv_with_f32_array(clip_plane_uni.as_ref(), &mut opts.clip_plane.clone()[..]);
 
@@ -94,6 +84,22 @@ impl<'a> Render<'a> for RenderableMesh<'a> {
         gl.uniform_matrix4fv_with_f32_array(model_uni.as_ref(), false, &mut model_array);
         gl.uniform_matrix4fv_with_f32_array(view_uni.as_ref(), false, &mut view_array);
 
+        let num_indices = mesh.vertex_position_indices.len();
+        gl.draw_elements_with_i32(GL::TRIANGLES, num_indices as i32, GL::UNSIGNED_SHORT, 0);
+    }
+
+    fn buffer_attributes(&self, gl: &WebGlRenderingContext) {
+        let shader = self.shader();
+        let mesh = self.mesh;
+
+        let pos_attrib = gl.get_attrib_location(&shader.program, "position");
+        let normal_attrib = gl.get_attrib_location(&shader.program, "normal");
+        let uv_attrib = gl.get_attrib_location(&shader.program, "uvs");
+
+        gl.enable_vertex_attrib_array(pos_attrib as u32);
+        gl.enable_vertex_attrib_array(normal_attrib as u32);
+        gl.enable_vertex_attrib_array(uv_attrib as u32);
+
         RenderableMesh::buffer_f32_data(&gl, &mesh.vertex_positions[..], pos_attrib as u32, 3);
         RenderableMesh::buffer_f32_data(&gl, &mesh.vertex_normals[..], normal_attrib as u32, 3);
         RenderableMesh::buffer_f32_data(
@@ -102,8 +108,6 @@ impl<'a> Render<'a> for RenderableMesh<'a> {
             uv_attrib as u32,
             2,
         );
-        RenderableMesh::buffer_u16_indices(&gl, indices);
-
-        gl.draw_elements_with_i32(GL::TRIANGLES, indices.len() as i32, GL::UNSIGNED_SHORT, 0);
+        RenderableMesh::buffer_u16_indices(&gl, &mesh.vertex_position_indices[..]);
     }
 }

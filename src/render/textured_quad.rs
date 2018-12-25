@@ -52,21 +52,24 @@ impl<'a> Render<'a> for TexturedQuad<'a> {
         &self.shader
     }
 
-    fn render(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+    fn buffer_attributes(&self, gl: &GL) {
         let shader = self.shader();
 
         let vertex_data = self.make_textured_quad_vertices(CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        let vertex_data_attrib = gl.get_attrib_location(&shader.program, "vertexData");
+        gl.enable_vertex_attrib_array(vertex_data_attrib as u32);
+
+        TexturedQuad::buffer_f32_data(&gl, &vertex_data[..], vertex_data_attrib as u32, 4);
+    }
+
+    fn render(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+        let shader = self.shader();
 
         gl.uniform1i(
             shader.get_uniform_location(gl, "texture").as_ref(),
             self.texture_unit as i32,
         );
-
-        let vertex_data_attrib = gl.get_attrib_location(&shader.program, "vertexData");
-        gl.enable_vertex_attrib_array(vertex_data_attrib as u32);
-
-        // FIXME: This repeatedly creates new buffers. Not what we want. Use VAOs
-        TexturedQuad::buffer_f32_data(&gl, &vertex_data[..], vertex_data_attrib as u32, 4);
 
         gl.draw_arrays(GL::TRIANGLES, 0, 6);
     }

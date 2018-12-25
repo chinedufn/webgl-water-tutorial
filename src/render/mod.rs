@@ -1,24 +1,27 @@
+use self::mesh::*;
+pub(self) use self::render_trait::*;
+use self::water_tile::*;
 use crate::app::Assets;
 use crate::app::State;
-use crate::shader::Shader;
-use crate::shader::ShaderKind;
-use crate::shader::ShaderSystem;
-use js_sys::WebAssembly;
-use nalgebra;
-use nalgebra::{Isometry3, Matrix4, Perspective3, Point3, Vector3};
-use wasm_bindgen::JsCast;
-use web_sys::WebGlRenderingContext as GL;
-use web_sys::*;
-
-mod water_tile;
-use self::water_tile::*;
-
-mod mesh;
-use self::mesh::*;
 use crate::canvas::CANVAS_HEIGHT;
 use crate::canvas::CANVAS_WIDTH;
 use crate::render::textured_quad::TexturedQuad;
+use crate::shader::ShaderKind;
+use crate::shader::ShaderSystem;
+use js_sys::Reflect;
+use nalgebra;
+use nalgebra::{Isometry3, Matrix4, Perspective3, Point3, Vector3};
+use std::cell::RefCell;
+use std::collections::HashMap;
+use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
+use web_sys::WebGlRenderingContext as GL;
+use web_sys::*;
+
+mod mesh;
+mod render_trait;
+mod textured_quad;
+mod water_tile;
 
 // FIXME: Use these.. Look at framebuffer tutorial (2)
 static REFLECTION_TEXTURE_WIDTH: i32 = 128;
@@ -28,7 +31,10 @@ static REFLECTION_TEXTURE_HEIGHT: i32 = 128;
 static REFRACTION_TEXTURE_WIDTH: i32 = 512;
 static REFRACTION_TEXTURE_HEIGHT: i32 = 512;
 
-mod textured_quad;
+struct VAO_Extension {
+    oes_vao_ext: js_sys::Object,
+    vaos: RefCell<HashMap<String, js_sys::Object>>,
+}
 
 pub struct WebRenderer {
     shader_sys: ShaderSystem,
@@ -36,6 +42,7 @@ pub struct WebRenderer {
     depth_texture_ext: Option<js_sys::Object>,
     refraction_framebuffer: Framebuffer,
     reflection_framebuffer: Framebuffer,
+    vao_ext: VAO_Extension,
 }
 
 impl WebRenderer {
@@ -46,6 +53,16 @@ impl WebRenderer {
             .get_extension("WEBGL_depth_texture")
             .expect("Depth texture extension");
 
+        let oes_vao_ext = gl
+            .get_extension("OES_vertex_array_object")
+            .expect("Get OES vao ext")
+            .expect("OES vao ext");
+
+        let vao_ext = VAO_Extension {
+            oes_vao_ext,
+            vaos: RefCell::new(HashMap::new()),
+        };
+
         let refraction_framebuffer = WebRenderer::create_refraction_framebuffer(&gl).unwrap();
         let reflection_framebuffer = WebRenderer::create_reflection_framebuffer(&gl).unwrap();
 
@@ -54,10 +71,11 @@ impl WebRenderer {
             shader_sys,
             refraction_framebuffer,
             reflection_framebuffer,
+            vao_ext,
         }
     }
 
-    pub fn render(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+    pub fn render(&mut self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
         gl.clear_color(0.53, 0.8, 0.98, 1.);
         gl.clear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT);
 
@@ -87,16 +105,21 @@ impl WebRenderer {
             clip_plane,
             flip_camera_y,
         };
+
+        let mesh_name = "Terrain";
+
         let renderable_mesh = RenderableMesh {
-            mesh: assets.get_mesh("Terrain").unwrap(),
+            mesh: assets.get_mesh(mesh_name).unwrap(),
             shader: mesh_shader,
             opts: &mesh_opts,
         };
 
+        self.prepare(gl, &renderable_mesh, mesh_name);
+
         renderable_mesh.render(gl, state, assets);
     }
 
-    fn render_water(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+    fn render_water(&mut self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
         self.render_refraction_fbo(gl, state, assets);
         self.render_reflection_fbo(gl, state, assets);
 
@@ -107,13 +130,20 @@ impl WebRenderer {
 
         let water_tile = RenderableWaterTile::new(water_shader);
 
+        // FIXME: Enum for key
+        self.prepare(gl, &water_tile, "water");
         water_tile.render(gl, state, assets);
 
         self.render_refraction_visual(gl, state, assets);
         self.render_reflection_visual(gl, state, assets);
     }
 
-    fn render_refraction_fbo(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+    fn render_refraction_fbo(
+        &mut self,
+        gl: &WebGlRenderingContext,
+        state: &State,
+        assets: &Assets,
+    ) {
         let Framebuffer { framebuffer, .. } = &self.refraction_framebuffer;
         gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
 
@@ -127,7 +157,12 @@ impl WebRenderer {
         self.render_meshes(gl, state, assets, clip_plane, false);
     }
 
-    fn render_reflection_fbo(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+    fn render_reflection_fbo(
+        &mut self,
+        gl: &WebGlRenderingContext,
+        state: &State,
+        assets: &Assets,
+    ) {
         let Framebuffer { framebuffer, .. } = &self.reflection_framebuffer;
         gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
 
@@ -148,15 +183,16 @@ impl WebRenderer {
             .get_shader(&ShaderKind::TexturedQuad)
             .unwrap();
         gl.use_program(Some(&quad_shader.program));
-        TexturedQuad::new(
+        let textured_quad = TexturedQuad::new(
             0,
             CANVAS_HEIGHT as u16,
             75,
             75,
             TextureUnit::Refraction as u8,
             quad_shader,
-        )
-        .render(gl, state, assets);
+        );
+        self.prepare(gl, &textured_quad, "TexturedQuad");
+        textured_quad.render(gl, state, assets);
     }
 
     fn render_reflection_visual(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
@@ -165,15 +201,58 @@ impl WebRenderer {
             .get_shader(&ShaderKind::TexturedQuad)
             .unwrap();
         gl.use_program(Some(&quad_shader.program));
-        TexturedQuad::new(
+        let textured_quad = TexturedQuad::new(
             CANVAS_WIDTH as u16 - 75,
             CANVAS_HEIGHT as u16,
             75,
             75,
             TextureUnit::Reflection as u8,
             quad_shader,
-        )
-        .render(gl, state, assets);
+        );
+
+        self.prepare(gl, &textured_quad, "TexturedQuad");
+        textured_quad.render(gl, state, assets);
+    }
+
+    // FIXME: Wrap object in VAO() struct
+    fn create_vao(&self) -> js_sys::Object {
+        let oes_vao_ext = &self.vao_ext.oes_vao_ext;
+
+        let create_vao_ext = Reflect::get(oes_vao_ext, &"createVertexArrayOES".into())
+            .expect("Create vao func")
+            .into();
+
+        Reflect::apply(&create_vao_ext, oes_vao_ext, &js_sys::Array::new())
+            .expect("Created vao").into()
+    }
+
+    // FIXME: Rename... Just getting it working
+    // FIXME: Move into trait?
+    fn prepare<'a>(&self, gl: &WebGlRenderingContext, renderable: &impl Render<'a>, key: &str) {
+        if self.vao_ext.vaos.borrow().get(key).is_none() {
+            let vao = self.create_vao();
+            self.bind_vao(&vao);
+            renderable.buffer_attributes(gl);
+            self.vao_ext.vaos.borrow_mut().insert(key.to_string(), vao);
+            return;
+        }
+
+        let vaos = self.vao_ext.vaos.borrow();
+        let vao = vaos.get(key).unwrap();
+        self.bind_vao(vao);
+    }
+
+    fn bind_vao(&self, vao: &js_sys::Object) {
+        let oes_vao_ext = &self.vao_ext.oes_vao_ext;
+
+        let bind_vao_ext = Reflect::get(&oes_vao_ext, &"bindVertexArrayOES".into())
+            .expect("Create vao func")
+            .into();
+
+        let args = js_sys::Array::new();
+        args.push(vao);
+
+        Reflect::apply(&bind_vao_ext, oes_vao_ext, &args).expect("Bound VAO");
     }
 }
 
@@ -207,7 +286,6 @@ impl TextureUnit {
 }
 
 impl WebRenderer {
-    // TODO: Breadcrumb -> if texture_unit is refraction we need to attach a depth texture
     fn create_refraction_framebuffer(gl: &WebGlRenderingContext) -> Result<Framebuffer, JsValue> {
         let framebuffer = gl.create_framebuffer();
         gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
@@ -287,7 +365,6 @@ impl WebRenderer {
 
         gl.active_texture(TextureUnit::Reflection.get());
         gl.bind_texture(GL::TEXTURE_2D, color_texture.as_ref());
-        // FIXME: Confirm that these are the proper settings and understand why
         // FIXME: Constant for canvas width and height that we get from the canvas module
         gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL::LINEAR as i32);
         gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MIN_FILTER, GL::LINEAR as i32);
@@ -337,57 +414,5 @@ impl WebRenderer {
             color_texture,
             depth_texture: None,
         })
-    }
-}
-
-pub trait Render<'a> {
-    fn shader_kind() -> ShaderKind;
-
-    fn shader(&'a self) -> &'a Shader;
-
-    fn render(&self, gl: &GL, state: &State, assets: &Assets);
-
-    // FIXME: Rename and normalize with other funcs.. move to Render trait.. Actually just
-    // create the VAOs at the beginning of the application
-    fn buffer_f32_data(gl: &GL, data: &[f32], attrib: u32, size: i32) {
-        let memory_buffer = wasm_bindgen::memory()
-            .dyn_into::<WebAssembly::Memory>()
-            .unwrap()
-            .buffer();
-
-        let data_location = data.as_ptr() as u32 / 4;
-
-        let data_array = js_sys::Float32Array::new(&memory_buffer)
-            .subarray(data_location, data_location + data.len() as u32);
-
-        // TODO: Do this outside of the loop using a vertex array object. We don't
-        // need to repeatedly buffer this.. Do this before moving on to rendering the
-        // water.
-        let buffer = gl.create_buffer().unwrap();
-
-        gl.bind_buffer(GL::ARRAY_BUFFER, Some(&buffer));
-        gl.buffer_data_with_array_buffer_view(GL::ARRAY_BUFFER, &data_array, GL::STATIC_DRAW);
-        gl.vertex_attrib_pointer_with_i32(attrib, size, GL::FLOAT, false, 0, 0);
-    }
-
-    // FIXME: Rename and normalize with other funcs.. move to Render trait.. Actually just
-    // create the VAOs at the beginning of the application
-    fn buffer_u16_indices(gl: &GL, indices: &[u16]) {
-        let memory_buffer = wasm_bindgen::memory()
-            .dyn_into::<WebAssembly::Memory>()
-            .unwrap()
-            .buffer();
-
-        let indices_location = indices.as_ptr() as u32 / 2;
-        let indices_array = js_sys::Uint16Array::new(&memory_buffer)
-            .subarray(indices_location, indices_location + indices.len() as u32);
-
-        let index_buffer = gl.create_buffer().unwrap();
-        gl.bind_buffer(GL::ELEMENT_ARRAY_BUFFER, Some(&index_buffer));
-        gl.buffer_data_with_array_buffer_view(
-            GL::ELEMENT_ARRAY_BUFFER,
-            &indices_array,
-            GL::STATIC_DRAW,
-        );
     }
 }
