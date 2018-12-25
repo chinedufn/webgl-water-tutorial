@@ -20,8 +20,6 @@ uniform vec4 clipPlane;
 attribute vec4 jointIndices;
 attribute vec4 jointWeights;
 
-uniform vec3 ambientColor;
-
 uniform vec4 boneRotQuaternions[20];
 uniform vec4 boneTransQuaternions[20];
 
