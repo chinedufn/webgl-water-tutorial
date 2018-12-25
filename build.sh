@@ -9,7 +9,7 @@ cd $(dirname $0)
 # --------------------------------------------------
 
 # Build the webgl_water_tutorial.wasm file
-cargo build --target wasm32-unknown-unknown
+RUST_BACKTRACE=1 cargo build --target wasm32-unknown-unknown
 
 # Process the webgl_water_tutorial.wasm file and generate the necessary
 # JavaScript glue code to run it in the browser.

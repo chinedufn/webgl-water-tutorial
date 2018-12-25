@@ -27,8 +27,8 @@ impl ShaderSystem {
             ShaderKind::Mesh,
             Shader::new(
                 &gl,
-                include_str!("./mesh-vertex.glsl"),
-                include_str!("./mesh-fragment.glsl"),
+                include_str!("mesh-non-skinned-vertex.glsl"),
+                include_str!("mesh-non-skinned-fragment.glsl"),
             )
             .unwrap(),
         );

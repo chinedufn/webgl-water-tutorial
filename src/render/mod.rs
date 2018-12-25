@@ -25,7 +25,6 @@ mod render_trait;
 mod textured_quad;
 mod water_tile;
 
-
 struct VAO_Extension {
     oes_vao_ext: js_sys::Object,
     vaos: RefCell<HashMap<String, js_sys::Object>>,
@@ -102,16 +101,36 @@ impl WebRenderer {
         };
 
         let mesh_name = "Terrain";
-
-        let renderable_mesh = RenderableMesh {
-            mesh: assets.get_mesh(mesh_name).unwrap(),
+        let terrain = RenderableMesh {
+            mesh: assets.get_mesh(mesh_name).expect("Terrain mesh"),
             shader: mesh_shader,
             opts: &mesh_opts,
         };
 
-        self.prepare(gl, &renderable_mesh, mesh_name);
+        // FIXME: Push everything that we want to render into a vector and have a separate
+        // method to render that vector
+        self.prepare(gl, &terrain, mesh_name);
+        terrain.render(gl, state, assets);
 
-        renderable_mesh.render(gl, state, assets);
+        // FIXME: Normalize with above
+
+        let mesh_opts = MeshRenderOpts {
+            pos: (0., 10., 0.),
+            clip_plane,
+            flip_camera_y,
+        };
+
+        let mesh_name = "Bird";
+        let bird = RenderableMesh {
+            mesh: assets.get_mesh(mesh_name).expect("Bird mesh"),
+            shader: mesh_shader,
+            opts: &mesh_opts,
+        };
+
+        // FIXME: Push everything that we want to render into a vector and have a separate
+        // method to render that vector
+        self.prepare(gl, &bird, mesh_name);
+        bird.render(gl, state, assets);
     }
 
     fn render_water(&mut self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
