@@ -56,9 +56,9 @@ impl<'a> Render<'a> for SkinnedMesh<'a> {
             joint_indices_attrib as u32,
             4,
         );
-        SkinnedMesh::buffer_u8_data(
+        SkinnedMesh::buffer_f32_data(
             &gl,
-            &mesh.vertex_group_indices.as_ref().expect("Group weights")[..],
+            &mesh.vertex_group_weights.as_ref().expect("Group weights")[..],
             joint_weights_attrib as u32,
             4,
         );
@@ -149,7 +149,6 @@ impl<'a> SkinnedMesh<'a> {
             // TODO: self.get_bone_group(BlenderArmature::ALL_BONES)
             joint_indices: vec![0, 1, 2, 3, 4, 5, 6, 7, 8],
             blend_fn: None,
-
             current_action: ActionSettings::new("Fly.001", 0.0, true),
             previous_action: None,
         };

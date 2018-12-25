@@ -104,11 +104,13 @@ void main (void) {
   leftModelSpacePos.y = y;
   leftModelSpacePos.z = z;
 
-  gl_Position = perspective * view * model * leftModelSpacePos;
+  vec4 leftWorldSpace = model * leftModelSpacePos;
 
-  shouldClip = dot(leftModelSpacePos, clipPlane) < 0.0 ? 1.0 : 0.0;
+  gl_Position = perspective * view * leftWorldSpace;
+
+  shouldClip = dot(leftWorldSpace, clipPlane) < 0.0 ? 1.0 : 0.0;
   vNormal = transformedNormal;
-  vWorldPos = leftModelSpacePos.xyz;
+  vWorldPos = leftWorldSpace.xyz;
   vUvs = uvs;
-  fromFragmentToCamera = cameraPos - leftModelSpacePos.xyz;
+  fromFragmentToCamera = cameraPos - leftWorldSpace.xyz;
 }

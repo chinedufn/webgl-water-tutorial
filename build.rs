@@ -42,7 +42,7 @@ fn main() {
     let armatures_by_file =
         blender_armature::parse_armatures_from_blender_stdout(&blender_stdout).unwrap();
 
-    let mut flattened_armatures =
+    let flattened_armatures =
         blender_armature::flatten_exported_armatures(&armatures_by_file).unwrap();
 
     let flattened_armatures = bincode::serialize(&flattened_armatures).unwrap();
