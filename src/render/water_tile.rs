@@ -23,10 +23,16 @@ impl Render for WaterTile {
         let pos_attrib = gl.get_attrib_location(&shader.program, "position");
         gl.enable_vertex_attrib_array(pos_attrib as u32);
 
-        let memory_buffer = wasm_bindgen::memory()
-            .dyn_into::<WebAssembly::Memory>()
-            .unwrap()
-            .buffer();
+        let model_uni = shader.get_uniform_location(gl, "model");
+        let view_uni = shader.get_uniform_location(gl, "view");
+        let refraction_texture_uni = shader.get_uniform_location(gl, "refractionTexture");
+        let reflection_texture_uni = shader.get_uniform_location(gl, "reflectionTexture");
+        let dudv_texture_uni = shader.get_uniform_location(gl, "dudvTexture");
+        let normal_map_uni = shader.get_uniform_location(gl, "normalMap");
+        let water_depth_texture_uni = shader.get_uniform_location(gl, "waterDepthTexture");
+        let dudv_offset_uni = shader.get_uniform_location(gl, "dudvOffset");
+        let camera_pos_uni = shader.get_uniform_location(gl, "cameraPos");
+        let perspective_uni = shader.get_uniform_location(gl, "perspective");
 
         let pos = (0., 0.0, 0.);
 
@@ -48,73 +54,44 @@ impl Render for WaterTile {
         model_array.copy_from_slice(model.as_slice());
         view_array.copy_from_slice(view.as_slice());
 
-        let model_uni = gl.get_uniform_location(&shader.program, "model");
-        let model_uni = model_uni.as_ref();
+        gl.uniform_matrix4fv_with_f32_array(model_uni.as_ref(), false, &mut model_array);
+        gl.uniform_matrix4fv_with_f32_array(view_uni.as_ref(), false, &mut view_array);
 
-        let view_uni = gl.get_uniform_location(&shader.program, "view");
-        let view_uni = view_uni.as_ref();
-
-        gl.uniform_matrix4fv_with_f32_array(model_uni, false, &mut model_array);
-        gl.uniform_matrix4fv_with_f32_array(view_uni, false, &mut view_array);
-
-        // FIXME: We should only do this once and cache it in the `shader`
-        // Shader.get_uniform_location ... Shader.uniforms: HashMap<String, u8>
-        // This way we don't hit the GPU over and over again for no reason
         gl.uniform1i(
-            gl.get_uniform_location(&shader.program, "refractionTexture")
-                .as_ref(),
+            refraction_texture_uni.as_ref(),
             TextureUnit::Refraction as i32,
         );
         gl.uniform1i(
-            gl.get_uniform_location(&shader.program, "reflectionTexture")
-                .as_ref(),
+            reflection_texture_uni.as_ref(),
             TextureUnit::Reflection as i32,
         );
+        gl.uniform1i(dudv_texture_uni.as_ref(), TextureUnit::Dudv as i32);
+        gl.uniform1i(normal_map_uni.as_ref(), TextureUnit::NormalMap as i32);
         gl.uniform1i(
-            gl.get_uniform_location(&shader.program, "dudvTexture")
-                .as_ref(),
-            TextureUnit::Dudv as i32,
-        );
-        gl.uniform1i(
-            gl.get_uniform_location(&shader.program, "normalMap")
-                .as_ref(),
-            TextureUnit::NormalMap as i32,
-        );
-        gl.uniform1i(
-            gl.get_uniform_location(&shader.program, "waterDepthTexture")
-                .as_ref(),
+            water_depth_texture_uni.as_ref(),
             TextureUnit::RefractionDepth as i32,
         );
 
         let seconds_elapsed = state.clock() / 1000.;
         let dudv_offset = (WAVE_SPEED * seconds_elapsed) % 1.;
-
-        // FIXME: Pass in `program` variable to save repeating `shader` over and over again
-        gl.uniform1f(
-            gl.get_uniform_location(&shader.program, "dudvOffset")
-                .as_ref(),
-            dudv_offset,
-        );
+        gl.uniform1f(dudv_offset_uni.as_ref(), dudv_offset);
 
         let camera_pos = state.camera().get_eye_pos();
         let mut camera_pos = [camera_pos.x, camera_pos.y, camera_pos.z];
-
-        gl.uniform3fv_with_f32_array(
-            gl.get_uniform_location(&shader.program, "cameraPos")
-                .as_ref(),
-            &mut camera_pos,
-        );
+        gl.uniform3fv_with_f32_array(camera_pos_uni.as_ref(), &mut camera_pos);
 
         let perspective = state.camera().projection();
         let mut perspective_array = [0.; 16];
         perspective_array.copy_from_slice(perspective.as_matrix().as_slice());
 
-        let perspective_uni = gl.get_uniform_location(&shader.program, "perspective");
-        let perspective_uni = perspective_uni.as_ref();
-        gl.uniform_matrix4fv_with_f32_array(perspective_uni, false, &mut perspective_array);
+        gl.uniform_matrix4fv_with_f32_array(
+            perspective_uni.as_ref(),
+            false,
+            &mut perspective_array,
+        );
 
         // FIXME: Explain this better
-        // x and z values, y is ommited since this is a flat surface. We set it in the vertex shader
+        // x and z values, y is omitted since this is a flat surface. We set it in the vertex shader
         let vertices: [f32; 8] = [
             -0.5, 0.5, // Bottom Left
             0.5, 0.5, // Bottom Right

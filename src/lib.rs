@@ -15,15 +15,19 @@
 #![feature(custom_attribute)]
 
 extern crate wasm_bindgen;
+use self::canvas::*;
+use self::render::*;
 use console_error_panic_hook;
 use js_sys::WebAssembly;
 use nalgebra;
 use nalgebra::{Isometry3, Matrix4, Perspective3, Point3, Vector3};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
+mod app;
+use self::app::*;
 use wasm_bindgen::JsCast;
-
 use web_sys::WebGlRenderingContext as GL;
 /// web_sys gives us access to browser APIs such as HtmlCanvasElement and WebGlRenderingContext
 ///
@@ -31,8 +35,9 @@ use web_sys::WebGlRenderingContext as GL;
 ///  https://rustwasm.github.io/wasm-bindgen/api/web_sys/
 use web_sys::*;
 
-mod app;
-use self::app::*;
+mod canvas;
+mod render;
+mod shader;
 
 // TODO: Use WebGlVertexArrayObject when we refactor and clean up
 
@@ -45,16 +50,6 @@ pub struct WebClient {
     gl: Rc<WebGlRenderingContext>,
     renderer: WebRenderer,
 }
-
-mod render;
-use self::render::*;
-
-mod shader; // FIXME: create module file
-
-mod canvas;
-use self::canvas::*;
-use std::cell::RefCell;
-
 #[wasm_bindgen]
 impl WebClient {
     /// Create a new web client
@@ -75,9 +70,12 @@ impl WebClient {
     /// to begin rendering.
     pub fn start(&self) -> Result<(), JsValue> {
         // FIXME: Request animation frame in here (compare performance)
-        self.create_du_dv_texture(Rc::clone(&self.gl));
-        self.create_normal_map_texture(Rc::clone(&self.gl));
-        self.create_stonetexture(Rc::clone(&self.gl));
+
+        let gl = &self.gl;
+
+        self.load_texture_image(Rc::clone(gl), "/dudvmap.png", TextureUnit::Dudv);
+        self.load_texture_image(Rc::clone(gl), "/normalmap.png", TextureUnit::NormalMap);
+        self.load_texture_image(Rc::clone(gl), "/stone-texture.png", TextureUnit::Stone);
 
         Ok(())
     }
@@ -95,15 +93,14 @@ impl WebClient {
 }
 
 impl WebClient {
-    /// FIXME: Better home for this... ... ?
-    fn create_du_dv_texture(&self, gl: Rc<GL>) {
-        let dudv_map = Rc::new(RefCell::new(HtmlImageElement::new().unwrap()));
-        let dudv_map_clone = Rc::clone(&dudv_map);
+    fn load_texture_image(&self, gl: Rc<GL>, src: &str, texture_unit: TextureUnit) {
+        let image = Rc::new(RefCell::new(HtmlImageElement::new().unwrap()));
+        let image_clone = Rc::clone(&image);
 
         let onload = Closure::wrap(Box::new(move || {
             let texture = gl.create_texture();
 
-            gl.active_texture(TextureUnit::Dudv.get());
+            gl.active_texture(texture_unit.get());
 
             gl.bind_texture(GL::TEXTURE_2D, texture.as_ref());
 
@@ -118,89 +115,15 @@ impl WebClient {
                 GL::RGBA as i32,
                 GL::RGBA,
                 GL::UNSIGNED_BYTE,
-                &dudv_map_clone.borrow(),
+                &image_clone.borrow(),
             )
-            .expect("Dudv tex image 2d");
+            .expect("Texture image 2d");
         }) as Box<dyn Fn()>);
 
-        let dudv_map = dudv_map.borrow_mut();
+        let image = image.borrow_mut();
 
-        dudv_map.set_onload(Some(onload.as_ref().unchecked_ref()));
-        dudv_map.set_src("/dudvmap.png");
-
-        onload.forget();
-    }
-
-    // FIXME: Normalize with texture creation above.. Just need to pass in the texture unit everything
-    // else is the same..
-    fn create_normal_map_texture(&self, gl: Rc<GL>) {
-        let dudv_map = Rc::new(RefCell::new(HtmlImageElement::new().unwrap()));
-        let dudv_map_clone = Rc::clone(&dudv_map);
-
-        let onload = Closure::wrap(Box::new(move || {
-            let texture = gl.create_texture();
-
-            gl.active_texture(TextureUnit::NormalMap.get());
-
-            gl.bind_texture(GL::TEXTURE_2D, texture.as_ref());
-
-            gl.pixel_storei(GL::UNPACK_FLIP_Y_WEBGL, 1);
-
-            gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MIN_FILTER, GL::NEAREST as i32);
-            gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL::NEAREST as i32);
-
-            gl.tex_image_2d_with_u32_and_u32_and_image(
-                GL::TEXTURE_2D,
-                0,
-                GL::RGBA as i32,
-                GL::RGBA,
-                GL::UNSIGNED_BYTE,
-                &dudv_map_clone.borrow(),
-            )
-            .expect("Dudv tex image 2d");
-        }) as Box<dyn Fn()>);
-
-        let dudv_map = dudv_map.borrow_mut();
-
-        dudv_map.set_onload(Some(onload.as_ref().unchecked_ref()));
-        dudv_map.set_src("/normalmap.png");
-
-        onload.forget();
-    }
-
-    // FIXME: Normalize with texture creation above.. Just need to pass in the texture unit everything
-    // else is the same..
-    fn create_stonetexture(&self, gl: Rc<GL>) {
-        let dudv_map = Rc::new(RefCell::new(HtmlImageElement::new().unwrap()));
-        let dudv_map_clone = Rc::clone(&dudv_map);
-
-        let onload = Closure::wrap(Box::new(move || {
-            let texture = gl.create_texture();
-
-            gl.active_texture(TextureUnit::Stone.get());
-
-            gl.bind_texture(GL::TEXTURE_2D, texture.as_ref());
-
-            gl.pixel_storei(GL::UNPACK_FLIP_Y_WEBGL, 1);
-
-            gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MIN_FILTER, GL::NEAREST as i32);
-            gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL::NEAREST as i32);
-
-            gl.tex_image_2d_with_u32_and_u32_and_image(
-                GL::TEXTURE_2D,
-                0,
-                GL::RGBA as i32,
-                GL::RGBA,
-                GL::UNSIGNED_BYTE,
-                &dudv_map_clone.borrow(),
-            )
-            .expect("Dudv tex image 2d");
-        }) as Box<dyn Fn()>);
-
-        let dudv_map = dudv_map.borrow_mut();
-
-        dudv_map.set_onload(Some(onload.as_ref().unchecked_ref()));
-        dudv_map.set_src("/stone-texture.png");
+        image.set_onload(Some(onload.as_ref().unchecked_ref()));
+        image.set_src(src);
 
         onload.forget();
     }

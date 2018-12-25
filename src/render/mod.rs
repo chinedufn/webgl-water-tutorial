@@ -32,6 +32,7 @@ mod textured_quad;
 
 pub struct WebRenderer {
     shader_sys: ShaderSystem,
+    #[allow(unused)]
     depth_texture_ext: Option<js_sys::Object>,
     refraction_framebuffer: Framebuffer,
     reflection_framebuffer: Framebuffer,
@@ -86,25 +87,17 @@ impl WebRenderer {
             clip_plane,
             flip_camera_y,
         };
-        // FIXME: Auto generated enum from build.rs instead of stringly typed.. Model::Terrain.to_str()
         let renderable_mesh = RenderableMesh {
             mesh: assets.get_mesh("Terrain").unwrap(),
             opts: &mesh_opts,
         };
 
-        // TODO: add a texture quad to the top left corner of experience (75x75) and render
-        // refraction texture to it
-
         renderable_mesh.render(gl, state, assets, mesh_shader);
     }
 
     fn render_water(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
-        self.render_refraction(gl, state, assets);
-        self.render_reflection(gl, state, assets);
-
-        //        let Framebuffer { framebuffer, .. } = &self.refraction_framebuffer;
-        //        gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
-        //        self.render_reflection(gl, state, assets);
+        self.render_refraction_fbo(gl, state, assets);
+        self.render_reflection_fbo(gl, state, assets);
 
         gl.bind_framebuffer(GL::FRAMEBUFFER, None);
 
@@ -119,7 +112,7 @@ impl WebRenderer {
         self.render_reflection_visual(gl, state, assets);
     }
 
-    fn render_refraction(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+    fn render_refraction_fbo(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
         let Framebuffer { framebuffer, .. } = &self.refraction_framebuffer;
         gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
 
@@ -133,7 +126,7 @@ impl WebRenderer {
         self.render_meshes(gl, state, assets, clip_plane, false);
     }
 
-    fn render_reflection(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+    fn render_reflection_fbo(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
         let Framebuffer { framebuffer, .. } = &self.reflection_framebuffer;
         gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
 
@@ -164,8 +157,6 @@ impl WebRenderer {
         .render(gl, state, assets, quad_shader);
     }
 
-    // FIXME: Normalize with code above... We're really just rendering a textured quad with a certain
-    // texture unit so move this code to TexturedQuad...
     fn render_reflection_visual(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
         let quad_shader = self
             .shader_sys
@@ -207,7 +198,7 @@ impl TextureUnit {
             TextureUnit::Dudv => GL::TEXTURE2,
             TextureUnit::NormalMap => GL::TEXTURE3,
             TextureUnit::RefractionDepth => GL::TEXTURE4,
-            TextureUnit::Stone => GL::TEXTURE5
+            TextureUnit::Stone => GL::TEXTURE5,
         }
     }
 }

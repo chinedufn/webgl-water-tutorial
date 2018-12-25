@@ -1,11 +1,9 @@
 use nalgebra;
-use nalgebra::{Isometry3, Matrix4, Perspective3, Point3, Vector3};
+use nalgebra::{Matrix4, Perspective3, Point3, Vector3};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
-
-use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
 
 pub struct ShaderSystem {
@@ -61,6 +59,7 @@ pub enum ShaderKind {
 
 pub struct Shader {
     pub program: WebGlProgram,
+    uniforms: RefCell<HashMap<String, WebGlUniformLocation>>,
 }
 
 impl Shader {
@@ -74,7 +73,30 @@ impl Shader {
         let frag_shader = compile_shader(&gl, WebGlRenderingContext::FRAGMENT_SHADER, frag_shader)?;
         let program = link_program(&gl, &vert_shader, &frag_shader)?;
 
-        Ok(Shader { program })
+        let uniforms = RefCell::new(HashMap::new());
+
+        Ok(Shader { program, uniforms })
+    }
+
+    /// Get the location of a uniform.
+    /// If this is our first time retrieving it we will cache it so that for future retrievals
+    /// we won't need to query the shader program.
+    pub fn get_uniform_location(
+        &self,
+        gl: &WebGlRenderingContext,
+        uniform_name: &str,
+    ) -> Option<WebGlUniformLocation> {
+        let mut uniforms = self.uniforms.borrow_mut();
+
+        if uniforms.get(uniform_name).is_none() {
+            uniforms.insert(
+                uniform_name.to_string(),
+                    gl.get_uniform_location(&self.program, uniform_name)
+                        .expect("Uniform"),
+            );
+        }
+
+        Some(uniforms.get(uniform_name).expect("loc").clone())
     }
 }
 

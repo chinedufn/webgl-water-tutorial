@@ -3,6 +3,7 @@
 use crate::app::Assets;
 use crate::app::State;
 use crate::render::Render;
+use crate::render::TextureUnit;
 use crate::shader::Shader;
 use crate::shader::ShaderKind;
 use blender_mesh::BlenderMesh;
@@ -12,7 +13,6 @@ use nalgebra::{Isometry3, Point3, Vector3};
 use wasm_bindgen::JsCast;
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
-use crate::render::TextureUnit;
 
 pub struct RenderableMesh<'a> {
     pub mesh: &'a BlenderMesh,
@@ -44,7 +44,7 @@ impl<'a> Render for RenderableMesh<'a> {
         let normal_attrib = gl.get_attrib_location(&shader.program, "normal");
         gl.enable_vertex_attrib_array(normal_attrib as u32);
 
-        let uv_attrib =  gl.get_attrib_location(&shader.program, "uvs");
+        let uv_attrib = gl.get_attrib_location(&shader.program, "uvs");
         gl.enable_vertex_attrib_array(uv_attrib as u32);
 
         let view = if opts.flip_camera_y {
@@ -92,7 +92,6 @@ impl<'a> Render for RenderableMesh<'a> {
             &mut camera_pos,
         );
 
-
         // FIXME: We should only do this once and cache it in the `shader`
         // Shader.get_uniform_location ... Shader.uniforms: HashMap<String, u8>
         // This way we don't hit the GPU over and over again for no reason
@@ -106,7 +105,12 @@ impl<'a> Render for RenderableMesh<'a> {
 
         RenderableMesh::buffer_f32_data(&gl, &mesh.vertex_positions[..], pos_attrib as u32, 3);
         RenderableMesh::buffer_f32_data(&gl, &mesh.vertex_normals[..], normal_attrib as u32, 3);
-        RenderableMesh::buffer_f32_data(&gl, &mesh.vertex_uvs.as_ref().expect("Mesh uvs")[..], uv_attrib as u32, 2);
+        RenderableMesh::buffer_f32_data(
+            &gl,
+            &mesh.vertex_uvs.as_ref().expect("Mesh uvs")[..],
+            uv_attrib as u32,
+            2,
+        );
         RenderableMesh::buffer_u16_indices(&gl, indices);
 
         gl.draw_elements_with_i32(GL::TRIANGLES, indices.len() as i32, GL::UNSIGNED_SHORT, 0);
