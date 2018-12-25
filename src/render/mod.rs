@@ -89,10 +89,11 @@ impl WebRenderer {
         };
         let renderable_mesh = RenderableMesh {
             mesh: assets.get_mesh("Terrain").unwrap(),
+            shader: mesh_shader,
             opts: &mesh_opts,
         };
 
-        renderable_mesh.render(gl, state, assets, mesh_shader);
+        renderable_mesh.render(gl, state, assets);
     }
 
     fn render_water(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
@@ -104,9 +105,9 @@ impl WebRenderer {
         let water_shader = self.shader_sys.get_shader(&ShaderKind::Water).unwrap();
         gl.use_program(Some(&water_shader.program));
 
-        let water_tile = WaterTile::new();
+        let water_tile = RenderableWaterTile::new(water_shader);
 
-        water_tile.render(gl, state, assets, water_shader);
+        water_tile.render(gl, state, assets);
 
         self.render_refraction_visual(gl, state, assets);
         self.render_reflection_visual(gl, state, assets);
@@ -153,8 +154,9 @@ impl WebRenderer {
             75,
             75,
             TextureUnit::Refraction as u8,
+            quad_shader,
         )
-        .render(gl, state, assets, quad_shader);
+        .render(gl, state, assets);
     }
 
     fn render_reflection_visual(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
@@ -169,8 +171,9 @@ impl WebRenderer {
             75,
             75,
             TextureUnit::Reflection as u8,
+            quad_shader,
         )
-        .render(gl, state, assets, quad_shader);
+        .render(gl, state, assets);
     }
 }
 
@@ -337,10 +340,12 @@ impl WebRenderer {
     }
 }
 
-pub trait Render {
+pub trait Render<'a> {
     fn shader_kind() -> ShaderKind;
 
-    fn render(&self, gl: &GL, state: &State, assets: &Assets, shader: &Shader);
+    fn shader(&'a self) -> &'a Shader;
+
+    fn render(&self, gl: &GL, state: &State, assets: &Assets);
 
     // FIXME: Rename and normalize with other funcs.. move to Render trait.. Actually just
     // create the VAOs at the beginning of the application
@@ -384,13 +389,5 @@ pub trait Render {
             &indices_array,
             GL::STATIC_DRAW,
         );
-    }
-}
-
-struct WaterTile {}
-
-impl WaterTile {
-    pub fn new() -> WaterTile {
-        WaterTile {}
     }
 }

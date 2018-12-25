@@ -8,7 +8,7 @@ use crate::shader::ShaderKind;
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
 
-pub struct TexturedQuad {
+pub struct TexturedQuad<'a> {
     /// Left most part of canvas is 0, rightmost is CANVAS_WIDTH
     left: u16,
     /// Bottom of canvas is 0, top is CANVAS_HEIGHT
@@ -19,26 +19,42 @@ pub struct TexturedQuad {
     height: u16,
     /// The texture unit to use
     texture_unit: u8,
+    /// The shader to use when rendering
+    shader: &'a Shader,
 }
 
-impl TexturedQuad {
-    pub fn new(left: u16, top: u16, width: u16, height: u16, texture_unit: u8) -> TexturedQuad {
+impl<'a> TexturedQuad<'a> {
+    pub fn new(
+        left: u16,
+        top: u16,
+        width: u16,
+        height: u16,
+        texture_unit: u8,
+        shader: &Shader,
+    ) -> TexturedQuad {
         TexturedQuad {
             left,
             top,
             width,
             height,
             texture_unit,
+            shader,
         }
     }
 }
 
-impl Render for TexturedQuad {
+impl<'a> Render<'a> for TexturedQuad<'a> {
     fn shader_kind() -> ShaderKind {
         ShaderKind::TexturedQuad
     }
 
-    fn render(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets, shader: &Shader) {
+    fn shader(&'a self) -> &'a Shader {
+        &self.shader
+    }
+
+    fn render(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+        let shader = self.shader();
+
         let vertex_data = self.make_textured_quad_vertices(CANVAS_WIDTH, CANVAS_HEIGHT);
 
         // FIXME: We should only do this once and cache it in the `shader`
@@ -59,7 +75,7 @@ impl Render for TexturedQuad {
     }
 }
 
-impl TexturedQuad {
+impl<'a> TexturedQuad<'a> {
     // Combine our vertex data so that we can pass one array to the GPU
     fn make_textured_quad_vertices(&self, viewport_width: i32, viewport_height: i32) -> Vec<f32> {
         let viewport_width = viewport_width as f32;

@@ -2,24 +2,37 @@ use crate::app::Assets;
 use crate::app::State;
 use crate::render::Render;
 use crate::render::TextureUnit;
-use crate::render::WaterTile;
 use crate::shader::Shader;
 use crate::shader::ShaderKind;
-use js_sys::WebAssembly;
 use nalgebra;
 use nalgebra::{Isometry3, Matrix4, Vector3};
-use wasm_bindgen::JsCast;
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
 
 static WAVE_SPEED: f32 = 0.03;
 
-impl Render for WaterTile {
+pub struct RenderableWaterTile<'a> {
+    shader: &'a Shader,
+}
+
+impl<'a> RenderableWaterTile<'a> {
+    pub fn new(shader: &'a Shader) -> RenderableWaterTile<'a> {
+        RenderableWaterTile { shader }
+    }
+}
+
+impl<'a> Render<'a> for RenderableWaterTile<'a> {
     fn shader_kind() -> ShaderKind {
         ShaderKind::Water
     }
 
-    fn render(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets, shader: &Shader) {
+    fn shader(&'a self) -> &'a Shader {
+        &self.shader
+    }
+
+    fn render(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+        let shader = self.shader();
+
         let pos_attrib = gl.get_attrib_location(&shader.program, "position");
         gl.enable_vertex_attrib_array(pos_attrib as u32);
 
@@ -101,8 +114,8 @@ impl Render for WaterTile {
 
         let mut indices: [u16; 6] = [0, 1, 2, 0, 2, 3];
 
-        WaterTile::buffer_f32_data(&gl, &vertices, pos_attrib as u32, 2);
-        WaterTile::buffer_u16_indices(&gl, &mut indices);
+        RenderableWaterTile::buffer_f32_data(&gl, &vertices, pos_attrib as u32, 2);
+        RenderableWaterTile::buffer_u16_indices(&gl, &mut indices);
 
         gl.enable(GL::BLEND);
         gl.blend_func(GL::SRC_ALPHA, GL::ONE_MINUS_SRC_ALPHA);

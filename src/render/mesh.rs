@@ -1,5 +1,3 @@
-//  https://github.com/chinedufn/akigi/blob/d73db7e62565bce706dd1c62d385115db80460c6/game-client/web-client/src/render/mesh.rs#L21
-
 use crate::app::Assets;
 use crate::app::State;
 use crate::render::Render;
@@ -7,15 +5,14 @@ use crate::render::TextureUnit;
 use crate::shader::Shader;
 use crate::shader::ShaderKind;
 use blender_mesh::BlenderMesh;
-use js_sys::WebAssembly;
 use nalgebra;
-use nalgebra::{Isometry3, Point3, Vector3};
-use wasm_bindgen::JsCast;
+use nalgebra::{Isometry3, Vector3};
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
 
 pub struct RenderableMesh<'a> {
     pub mesh: &'a BlenderMesh,
+    pub shader: &'a Shader,
     pub opts: &'a MeshRenderOpts,
     // TODO: pub buffers
 }
@@ -27,12 +24,18 @@ pub struct MeshRenderOpts {
     pub flip_camera_y: bool,
 }
 
-impl<'a> Render for RenderableMesh<'a> {
+impl<'a> Render<'a> for RenderableMesh<'a> {
     fn shader_kind() -> ShaderKind {
         ShaderKind::Mesh
     }
 
-    fn render(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets, shader: &Shader) {
+    fn shader(&'a self) -> &'a Shader {
+        &self.shader
+    }
+
+    fn render(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+        let shader = self.shader();
+
         let mesh = self.mesh;
         let opts = self.opts;
         let pos = opts.pos;
