@@ -47,7 +47,6 @@ fn main() {
 
     let flattened_armatures = bincode::serialize(&flattened_armatures).unwrap();
 
-
     let mut f = File::create("./armatures.bytes").unwrap();
     f.write_all(&flattened_armatures[..]).unwrap();
 }

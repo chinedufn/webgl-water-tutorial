@@ -124,8 +124,15 @@ impl WebRenderer {
         gl.use_program(Some(&skinned_shader.program));
 
 
+        let bird_speed = 3.5;
+        let bird_start = -30.0;
+        let bird_end = 30.0;
+        let bird_traveled = (state.clock() / 1000.0) * bird_speed;
+
+        let z = bird_start + (bird_traveled % (bird_end - bird_start));
+
         let mesh_opts = MeshRenderOpts {
-            pos: (0., 10., 0.),
+            pos: (0., 6., z),
             clip_plane,
             flip_camera_y,
         };
