@@ -58,7 +58,7 @@ impl State {
                 self.mouse.set_pressed(true);
                 self.mouse.set_pos(*x, *y);
             }
-            Msg::MouseUp | Msg::MouseOut => {
+            Msg::MouseUp => {
                 self.mouse.set_pressed(false);
             }
             Msg::MouseMove(x, y) => {
@@ -103,7 +103,6 @@ pub enum Msg {
     AdvanceClock(f32),
     MouseDown(i32, i32),
     MouseUp,
-    MouseOut,
     MouseMove(i32, i32),
     Zoom(f32),
 }

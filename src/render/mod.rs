@@ -14,8 +14,6 @@ use nalgebra;
 use nalgebra::{Isometry3, Matrix4, Perspective3, Point3, Vector3};
 use std::cell::RefCell;
 use std::collections::HashMap;
-use wasm_bindgen::JsCast;
-use wasm_bindgen::JsValue;
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
 
@@ -25,10 +23,12 @@ mod render_trait;
 mod textured_quad;
 mod water_tile;
 
-struct VAO_Extension {
+struct VaoExtension {
     oes_vao_ext: js_sys::Object,
-    vaos: RefCell<HashMap<String, js_sys::Object>>,
+    vaos: RefCell<HashMap<String, Vao>>,
 }
+
+struct Vao(js_sys::Object);
 
 pub struct WebRenderer {
     shader_sys: ShaderSystem,
@@ -36,7 +36,7 @@ pub struct WebRenderer {
     depth_texture_ext: Option<js_sys::Object>,
     refraction_framebuffer: Framebuffer,
     reflection_framebuffer: Framebuffer,
-    vao_ext: VAO_Extension,
+    vao_ext: VaoExtension,
 }
 
 impl WebRenderer {
@@ -52,7 +52,7 @@ impl WebRenderer {
             .expect("Get OES vao ext")
             .expect("OES vao ext");
 
-        let vao_ext = VAO_Extension {
+        let vao_ext = VaoExtension {
             oes_vao_ext,
             vaos: RefCell::new(HashMap::new()),
         };
@@ -112,7 +112,7 @@ impl WebRenderer {
 
         // FIXME: Push everything that we want to render into a vector and have a separate
         // method to render that vector
-        self.prepare(gl, &terrain, mesh_name);
+        self.prepare_for_render(gl, &terrain, mesh_name);
         terrain.render(gl, state, assets);
 
         // FIXME: Normalize with above
@@ -122,7 +122,6 @@ impl WebRenderer {
             .get_shader(&ShaderKind::SkinnedMesh)
             .unwrap();
         gl.use_program(Some(&skinned_shader.program));
-
 
         let bird_speed = 3.5;
         let bird_start = -30.0;
@@ -148,7 +147,7 @@ impl WebRenderer {
 
         // FIXME: Push everything that we want to render into a vector and have a separate
         // method to render that vector
-        self.prepare(gl, &bird, mesh_name);
+        self.prepare_for_render(gl, &bird, mesh_name);
         bird.render(gl, state, assets);
     }
 
@@ -164,7 +163,7 @@ impl WebRenderer {
         let water_tile = RenderableWaterTile::new(water_shader);
 
         // FIXME: Enum for key
-        self.prepare(gl, &water_tile, "water");
+        self.prepare_for_render(gl, &water_tile, "water");
         water_tile.render(gl, state, assets);
 
         self.render_refraction_visual(gl, state, assets);
@@ -224,7 +223,7 @@ impl WebRenderer {
             TextureUnit::Refraction as u8,
             quad_shader,
         );
-        self.prepare(gl, &textured_quad, "RefractionVisual");
+        self.prepare_for_render(gl, &textured_quad, "RefractionVisual");
         textured_quad.render(gl, state, assets);
     }
 
@@ -243,26 +242,33 @@ impl WebRenderer {
             quad_shader,
         );
 
-        self.prepare(gl, &textured_quad, "ReflectionVisual");
+        self.prepare_for_render(gl, &textured_quad, "ReflectionVisual");
         textured_quad.render(gl, state, assets);
     }
 
     // FIXME: Wrap object in VAO() struct
-    fn create_vao(&self) -> js_sys::Object {
+    fn create_vao(&self) -> Vao {
         let oes_vao_ext = &self.vao_ext.oes_vao_ext;
 
         let create_vao_ext = Reflect::get(oes_vao_ext, &"createVertexArrayOES".into())
             .expect("Create vao func")
             .into();
 
-        Reflect::apply(&create_vao_ext, oes_vao_ext, &js_sys::Array::new())
-            .expect("Created vao")
-            .into()
+        Vao(
+            Reflect::apply(&create_vao_ext, oes_vao_ext, &js_sys::Array::new())
+                .expect("Created vao")
+                .into(),
+        )
     }
 
     // FIXME: Rename... Just getting it working
     // FIXME: Move into trait?
-    fn prepare<'a>(&self, gl: &WebGlRenderingContext, renderable: &impl Render<'a>, key: &str) {
+    fn prepare_for_render<'a>(
+        &self,
+        gl: &WebGlRenderingContext,
+        renderable: &impl Render<'a>,
+        key: &str,
+    ) {
         if self.vao_ext.vaos.borrow().get(key).is_none() {
             let vao = self.create_vao();
             self.bind_vao(&vao);
@@ -276,7 +282,7 @@ impl WebRenderer {
         self.bind_vao(vao);
     }
 
-    fn bind_vao(&self, vao: &js_sys::Object) {
+    fn bind_vao(&self, vao: &Vao) {
         let oes_vao_ext = &self.vao_ext.oes_vao_ext;
 
         let bind_vao_ext = Reflect::get(&oes_vao_ext, &"bindVertexArrayOES".into())
@@ -284,7 +290,7 @@ impl WebRenderer {
             .into();
 
         let args = js_sys::Array::new();
-        args.push(vao);
+        args.push(&vao.0);
 
         Reflect::apply(&bind_vao_ext, oes_vao_ext, &args).expect("Bound VAO");
     }

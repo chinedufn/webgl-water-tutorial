@@ -154,15 +154,14 @@ impl<'a> SkinnedMesh<'a> {
         };
         let bones = armature.interpolate_bones(&interp_opts);
 
-        let mut bones: Vec<(&u8, &Bone)> = bones.iter().to_owned().collect();
-        bones.sort_by(|a, b| a.0.partial_cmp(b.0).unwrap());
-        let bones: Vec<&Bone> = bones.iter().map(|(_, bone)| *bone).collect();
+        let bone_count = bones.len() as u8;
 
-        for (index, bone) in bones.iter().enumerate() {
+        for index in 0..bone_count {
+            let bone = bones.get(&index).expect("Interpolated bone");
             let bone = bone.vec();
+
             let (rot_quat, trans_quat) = bone.split_at(4);
 
-            let rot_quat = rot_quat.to_vec();
             let rot_quat_uni =
                 shader.get_uniform_location(gl, &format!("boneRotQuaternions[{}]", index));
             gl.uniform4f(
@@ -173,7 +172,6 @@ impl<'a> SkinnedMesh<'a> {
                 rot_quat[3],
             );
 
-            let trans_quat = trans_quat.to_vec();
             let trans_quat_uni =
                 shader.get_uniform_location(gl, &format!("boneTransQuaternions[{}]", index));
             gl.uniform4f(

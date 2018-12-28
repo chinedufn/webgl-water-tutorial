@@ -18,30 +18,17 @@ extern crate wasm_bindgen;
 use self::canvas::*;
 use self::render::*;
 use console_error_panic_hook;
-use js_sys::WebAssembly;
-use nalgebra;
-use nalgebra::{Isometry3, Matrix4, Perspective3, Point3, Vector3};
-use std::cell::RefCell;
-use std::collections::HashMap;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 mod app;
-pub (in crate) use self::app::*;
-use wasm_bindgen::JsCast;
-use web_sys::WebGlRenderingContext as GL;
-/// web_sys gives us access to browser APIs such as HtmlCanvasElement and WebGlRenderingContext
-///
-/// web_sys API docs
-///  https://rustwasm.github.io/wasm-bindgen/api/web_sys/
+pub(in crate) use self::app::*;
+use crate::load_texture_img::load_texture_image;
 use web_sys::*;
 
 mod canvas;
+mod load_texture_img;
 mod render;
 mod shader;
-
-// TODO: Use WebGlVertexArrayObject when we refactor and clean up
-
-// TODO: Instruct reader on what version of Rust to use in README and in tutorial post
 
 /// Used to run the application from the web
 #[wasm_bindgen]
@@ -69,13 +56,11 @@ impl WebClient {
     /// Start our WebGL Water application. `index.html` will call this function in order
     /// to begin rendering.
     pub fn start(&self) -> Result<(), JsValue> {
-        // FIXME: Request animation frame in here (compare performance)
-
         let gl = &self.gl;
 
-        self.load_texture_image(Rc::clone(gl), "/dudvmap.png", TextureUnit::Dudv);
-        self.load_texture_image(Rc::clone(gl), "/normalmap.png", TextureUnit::NormalMap);
-        self.load_texture_image(Rc::clone(gl), "/stone-texture.png", TextureUnit::Stone);
+        load_texture_image(Rc::clone(gl), "/dudvmap.png", TextureUnit::Dudv);
+        load_texture_image(Rc::clone(gl), "/normalmap.png", TextureUnit::NormalMap);
+        load_texture_image(Rc::clone(gl), "/stone-texture.png", TextureUnit::Stone);
 
         Ok(())
     }
@@ -92,39 +77,4 @@ impl WebClient {
     }
 }
 
-impl WebClient {
-    fn load_texture_image(&self, gl: Rc<GL>, src: &str, texture_unit: TextureUnit) {
-        let image = Rc::new(RefCell::new(HtmlImageElement::new().unwrap()));
-        let image_clone = Rc::clone(&image);
-
-        let onload = Closure::wrap(Box::new(move || {
-            let texture = gl.create_texture();
-
-            gl.active_texture(texture_unit.get());
-
-            gl.bind_texture(GL::TEXTURE_2D, texture.as_ref());
-
-            gl.pixel_storei(GL::UNPACK_FLIP_Y_WEBGL, 1);
-
-            gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MIN_FILTER, GL::NEAREST as i32);
-            gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL::NEAREST as i32);
-
-            gl.tex_image_2d_with_u32_and_u32_and_image(
-                GL::TEXTURE_2D,
-                0,
-                GL::RGBA as i32,
-                GL::RGBA,
-                GL::UNSIGNED_BYTE,
-                &image_clone.borrow(),
-            )
-            .expect("Texture image 2d");
-        }) as Box<dyn Fn()>);
-
-        let image = image.borrow_mut();
-
-        image.set_onload(Some(onload.as_ref().unchecked_ref()));
-        image.set_src(src);
-
-        onload.forget();
-    }
-}
+impl WebClient {}

@@ -7,13 +7,29 @@ use wasm_bindgen::JsValue;
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
 
+static CANVAS_CONTAINER: &'static str = "webgl-water-tutorial";
+
+static MOUSE_DOWN: &'static str = "mousedown";
+static MOUSE_UP: &'static str = "mouseup";
+static MOUSE_MOVE: &'static str = "mousemove";
+static WHEEL: &'static str = "wheel";
+
 pub static CANVAS_WIDTH: i32 = 512;
 pub static CANVAS_HEIGHT: i32 = 512;
 
-// FIXME: Single responsibility
-// FIXME: Split event attachments into functions
-// FIXME: https://rustwasm.github.io/wasm-bindgen/api/web_sys/struct.WheelEvent.html#method.delta_y to zoom
+
 pub fn create_webgl_context(app: Rc<App>) -> Result<WebGlRenderingContext, JsValue> {
+    let canvas = init_canvas(app)?;
+
+    let gl: WebGlRenderingContext = canvas.get_context("webgl")?.unwrap().dyn_into()?;
+
+    gl.clear_color(0.0, 0.0, 0.0, 1.0);
+    gl.enable(GL::DEPTH_TEST);
+
+    Ok(gl)
+}
+
+fn init_canvas (app: Rc<App>) -> Result<HtmlCanvasElement, JsValue> {
     let window = window().unwrap();
     let document = window.document().unwrap();
 
@@ -22,90 +38,80 @@ pub fn create_webgl_context(app: Rc<App>) -> Result<WebGlRenderingContext, JsVal
     canvas.set_width(CANVAS_WIDTH as u32);
     canvas.set_height(CANVAS_HEIGHT as u32);
 
-    // Mouse down
-    {
-        let app = Rc::clone(&app);
+    attach_mouse_down_handler(&canvas, Rc::clone(&app))?;
 
-        let on_mouse_down = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
-            let x = event.client_x();
-            let y = event.client_y();
-            app.store.borrow_mut().msg(&Msg::MouseDown(x, y));
-        }) as Box<FnMut(_)>);
+    attach_mouse_up_handler(&canvas, Rc::clone(&app))?;
 
-        canvas.add_event_listener_with_callback(
-            "mousedown",
-            on_mouse_down.as_ref().unchecked_ref(),
-        )?;
+    attach_mouse_move_handler(&canvas, Rc::clone(&app))?;
 
-        on_mouse_down.forget();
-    }
+    attach_mouse_wheel_handler(&canvas, Rc::clone(&app))?;
 
-    // Mouse up
-    {
-        let app = Rc::clone(&app);
+    match document.get_element_by_id(CANVAS_CONTAINER) {
+        Some(container) => container.append_child(&canvas)?,
+        None => document.body().expect("Body").append_child(&canvas)?
+    };
 
-        let on_mouse_up = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
-            app.store.borrow_mut().msg(&Msg::MouseUp);
-        }) as Box<FnMut(_)>);
+    Ok(canvas)
+}
 
-        canvas.add_event_listener_with_callback("mouseup", on_mouse_up.as_ref().unchecked_ref())?;
+fn attach_mouse_down_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result<(), JsValue> {
+    let handler = move |event: web_sys::MouseEvent| {
+        let x = event.client_x();
+        let y = event.client_y();
+        app.store.borrow_mut().msg(&Msg::MouseDown(x, y));
+    };
 
-        on_mouse_up.forget();
-    }
+    let handler = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
 
-    // Mouse move
-    {
-        let app = Rc::clone(&app);
+    canvas.add_event_listener_with_callback(MOUSE_DOWN, handler.as_ref().unchecked_ref())?;
 
-        let on_mouse_move = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
-            let x = event.client_x();
-            let y = event.client_y();
-            app.store.borrow_mut().msg(&Msg::MouseMove(x, y));
-        }) as Box<FnMut(_)>);
+    handler.forget();
 
-        canvas.add_event_listener_with_callback(
-            "mousemove",
-            on_mouse_move.as_ref().unchecked_ref(),
-        )?;
+    Ok(())
+}
 
-        on_mouse_move.forget();
-    }
+fn attach_mouse_up_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result<(), JsValue> {
+    let handler = move |event: web_sys::MouseEvent| {
+        app.store.borrow_mut().msg(&Msg::MouseUp);
+    };
 
-    // Mouse out
-    {
-        let app = Rc::clone(&app);
+    let handler = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
 
-        let on_mouse_out = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
-            app.store.borrow_mut().msg(&Msg::MouseOut);
-        }) as Box<FnMut(_)>);
+    canvas.add_event_listener_with_callback(MOUSE_UP, handler.as_ref().unchecked_ref())?;
 
-        canvas
-            .add_event_listener_with_callback("mouseout", on_mouse_out.as_ref().unchecked_ref())?;
+    handler.forget();
 
-        on_mouse_out.forget();
-    }
+    Ok(())
+}
 
-    // Mouse wheel
-    {
-        let app = Rc::clone(&app);
+fn attach_mouse_move_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result<(), JsValue> {
+    let handler = move |event: web_sys::MouseEvent| {
+        let x = event.client_x();
+        let y = event.client_y();
+        app.store.borrow_mut().msg(&Msg::MouseMove(x, y));
+    };
 
-        let on_wheel = Closure::wrap(Box::new(move |event: web_sys::WheelEvent| {
-            let zoom_amount = event.delta_y() / 50.;
+    let handler = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
 
-            app.store.borrow_mut().msg(&Msg::Zoom(zoom_amount as f32));
-        }) as Box<FnMut(_)>);
+    canvas.add_event_listener_with_callback(MOUSE_MOVE, handler.as_ref().unchecked_ref())?;
 
-        canvas.add_event_listener_with_callback("wheel", on_wheel.as_ref().unchecked_ref())?;
+    handler.forget();
 
-        on_wheel.forget();
-    }
+    Ok(())
+}
 
-    let gl: WebGlRenderingContext = canvas.get_context("webgl")?.unwrap().dyn_into()?;
+fn attach_mouse_wheel_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result<(), JsValue> {
+    let handler = move |event: web_sys::WheelEvent| {
+        let zoom_amount = event.delta_y() / 50.;
 
-    gl.clear_color(0.0, 0.0, 0.0, 1.0);
-    gl.enable(GL::DEPTH_TEST);
+        app.store.borrow_mut().msg(&Msg::Zoom(zoom_amount as f32));
+    };
 
-    document.body().unwrap().append_child(&canvas)?;
+    let handler = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
 
-    Ok(gl)
+    canvas.add_event_listener_with_callback(WHEEL, handler.as_ref().unchecked_ref())?;
+
+    handler.forget();
+
+    Ok(())
 }

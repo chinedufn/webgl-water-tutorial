@@ -4,7 +4,7 @@
   </head>
   <body>
 
-    <div id="webgl-water-tutorial" height="150" width="150" />
+    <div id="webgl-water-tutorial" height="512" width="512" />
 
       <script src='/webgl_water_tutorial.js'></script>
 
@@ -13,10 +13,9 @@
           window.wasm_bindgen('/webgl_water_tutorial_bg.wasm')
             .then(function () {
               // Start our rust application. You can find `WebClient` in `src/lib.rs`
-              var webClient = new window.wasm_bindgen.WebClient()
+              const webClient = new window.wasm_bindgen.WebClient()
               webClient.start()
 
-              // FIXME: https://github.com/rustwasm/wasm-bindgen/blob/master/examples/request-animation-frame/src/lib.rs
               let time = Date.now();
               function render () {
                 const dt = Date.now() - time
