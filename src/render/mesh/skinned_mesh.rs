@@ -1,4 +1,3 @@
-use crate::app::Assets;
 use crate::app::State;
 use crate::render::mesh::non_skinned_mesh::MeshRenderOpts;
 use crate::render::Render;
@@ -70,7 +69,7 @@ impl<'a> Render<'a> for SkinnedMesh<'a> {
         SkinnedMesh::buffer_u16_indices(&gl, &mesh.vertex_position_indices[..]);
     }
 
-    fn render(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+    fn render(&self, gl: &WebGlRenderingContext, state: &State) {
         let shader = self.shader();
 
         let mesh = self.mesh;

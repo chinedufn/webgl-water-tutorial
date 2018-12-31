@@ -1,7 +1,5 @@
 precision mediump float;
 
-// TODO: Pass this uniform in
-
 varying vec3 vNormal;
 varying vec3 vWorldPos;
 
@@ -13,7 +11,6 @@ varying float shouldClip;
 
 float shininess = 0.4;
 
-// FIXME: Uniforms
 vec3 sunlightColor = vec3(1.0, 1.0, 1.0);
 vec3 sunlightDir = normalize(vec3(-1.0, -1.0, 0.5));
 

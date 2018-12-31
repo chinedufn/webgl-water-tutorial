@@ -17,14 +17,15 @@ impl Assets {
         Assets { meshes, armatures }
     }
 
-    // FIXME: XmlHttpRequest request instead of including in binary
-    // Deserializing on the client
+    // In a real application you would download via XHR or fetch request, but here we just
+    // included_bytes! for simplicity
     fn download_meshes() -> HashMap<String, BlenderMesh> {
         let meshes = include_bytes!("../../../meshes.bytes");
         let mut meshes: HashMap<String, BlenderMesh> = bincode::deserialize(meshes).unwrap();
 
         for (mesh_name, mesh) in meshes.iter_mut() {
             web_sys::console::log_1(&mesh_name.to_string().into());
+
             mesh.combine_vertex_indices();
             mesh.triangulate();
 
@@ -38,8 +39,8 @@ impl Assets {
         meshes
     }
 
-    // FIXME: XmlHttpRequest request instead of including in binary
-    // Deserializing on the client
+    // In a real application you would download via XHR or fetch request, but here we just
+    // included_bytes! for simplicity
     fn download_armatures() -> HashMap<String, BlenderArmature> {
         let armatures = include_bytes!("../../../armatures.bytes");
         let mut armatures: HashMap<String, BlenderArmature> =

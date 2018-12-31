@@ -22,5 +22,5 @@ wasm-bindgen ./target/wasm32-unknown-unknown/debug/webgl_water_tutorial.wasm --o
 # Build the webgl_water_tutorial.wasm file
 #cargo build --target wasm32-unknown-unknown --release &&
 #wasm-bindgen ./target/wasm32-unknown-unknown/release/webgl_water_tutorial.wasm --out-dir . --no-typescript --no-modules &&
-#wasm-opt -Oz -o optimized.wasm webgl_water_tutorial.wasm  &&
-#mv optimized webgl_water_tutorial.wasm
+#wasm-opt -O3 -o optimized.wasm webgl_water_tutorial.wasm  &&
+#mv optimized.wasm webgl_water_tutorial.wasm

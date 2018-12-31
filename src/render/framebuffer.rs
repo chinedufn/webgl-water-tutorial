@@ -54,9 +54,6 @@ impl WebRenderer {
             REFRACTION_TEXTURE_HEIGHT,
             0,
             GL::DEPTH_COMPONENT as u32,
-            // FIXME: UNSIGNED_BYTE should be fine here since we don't need as much precision
-            // since it doesn't matter if there are two objects next to eachother and our
-            // depth is very slightly off. Precision is more important in shadow mapping
             GL::UNSIGNED_SHORT,
             None,
         )?;

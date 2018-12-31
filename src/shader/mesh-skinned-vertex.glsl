@@ -20,8 +20,8 @@ uniform vec4 clipPlane;
 attribute vec4 jointIndices;
 attribute vec4 jointWeights;
 
-uniform vec4 boneRotQuaternions[20];
-uniform vec4 boneTransQuaternions[20];
+uniform vec4 boneRotQuaternions[15];
+uniform vec4 boneTransQuaternions[15];
 
 void main (void) {
   // Blend our dual quaternion

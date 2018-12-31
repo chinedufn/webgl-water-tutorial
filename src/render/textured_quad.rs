@@ -1,10 +1,8 @@
-use crate::app::Assets;
 use crate::app::State;
 use crate::canvas::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use crate::render::Render;
 use crate::shader::Shader;
 use crate::shader::ShaderKind;
-// FIXME: Remove all of the * and instead import exactly what we need so reader can learn
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
 
@@ -63,7 +61,7 @@ impl<'a> Render<'a> for TexturedQuad<'a> {
         TexturedQuad::buffer_f32_data(&gl, &vertex_data[..], vertex_data_attrib as u32, 4);
     }
 
-    fn render(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+    fn render(&self, gl: &WebGlRenderingContext, _state: &State) {
         let shader = self.shader();
 
         gl.uniform1i(

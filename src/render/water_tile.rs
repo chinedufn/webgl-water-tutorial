@@ -1,4 +1,3 @@
-use crate::app::Assets;
 use crate::app::State;
 use crate::render::Render;
 use crate::render::TextureUnit;
@@ -50,7 +49,7 @@ impl<'a> Render<'a> for RenderableWaterTile<'a> {
         RenderableWaterTile::buffer_u16_indices(&gl, &mut indices);
     }
 
-    fn render(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+    fn render(&self, gl: &WebGlRenderingContext, state: &State) {
         let shader = self.shader();
 
         let model_uni = shader.get_uniform_location(gl, "model");

@@ -42,7 +42,7 @@ impl WebRenderer {
         };
 
         self.prepare_for_render(gl, &terrain, mesh_name);
-        terrain.render(gl, state, assets);
+        terrain.render(gl, state);
 
         // Render Bird
 
@@ -68,6 +68,6 @@ impl WebRenderer {
         };
 
         self.prepare_for_render(gl, &bird, mesh_name);
-        bird.render(gl, state, assets);
+        bird.render(gl, state);
     }
 }

@@ -10,8 +10,6 @@ use crate::render::textured_quad::TexturedQuad;
 use crate::shader::ShaderKind;
 use crate::shader::ShaderSystem;
 use js_sys::Reflect;
-use nalgebra;
-use nalgebra::Vector3;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use web_sys::WebGlRenderingContext as GL;
@@ -43,7 +41,6 @@ pub struct WebRenderer {
     vao_ext: VaoExtension,
 }
 
-// FIXME: Link to soft edges tutorial in README
 impl WebRenderer {
     pub fn new(gl: &WebGlRenderingContext) -> WebRenderer {
         let shader_sys = ShaderSystem::new(&gl);
@@ -87,14 +84,14 @@ impl WebRenderer {
 
         gl.viewport(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-        self.render_water(gl, state, assets);
+        self.render_water(gl, state);
         self.render_meshes(gl, state, assets, clip_plane, false);
 
-        self.render_refraction_visual(gl, state, assets);
-        self.render_reflection_visual(gl, state, assets);
+        self.render_refraction_visual(gl, state);
+        self.render_reflection_visual(gl, state);
     }
 
-    fn render_water(&mut self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+    fn render_water(&mut self, gl: &WebGlRenderingContext, state: &State) {
         gl.bind_framebuffer(GL::FRAMEBUFFER, None);
 
         let water_shader = self.shader_sys.get_shader(&ShaderKind::Water).unwrap();
@@ -103,7 +100,7 @@ impl WebRenderer {
         let water_tile = RenderableWaterTile::new(water_shader);
 
         self.prepare_for_render(gl, &water_tile, "water");
-        water_tile.render(gl, state, assets);
+        water_tile.render(gl, state);
     }
 
     fn render_refraction_fbo(
@@ -144,7 +141,7 @@ impl WebRenderer {
         self.render_meshes(gl, state, assets, clip_plane, true);
     }
 
-    fn render_refraction_visual(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+    fn render_refraction_visual(&self, gl: &WebGlRenderingContext, state: &State) {
         let quad_shader = self
             .shader_sys
             .get_shader(&ShaderKind::TexturedQuad)
@@ -159,10 +156,10 @@ impl WebRenderer {
             quad_shader,
         );
         self.prepare_for_render(gl, &textured_quad, "RefractionVisual");
-        textured_quad.render(gl, state, assets);
+        textured_quad.render(gl, state);
     }
 
-    fn render_reflection_visual(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+    fn render_reflection_visual(&self, gl: &WebGlRenderingContext, state: &State) {
         let quad_shader = self
             .shader_sys
             .get_shader(&ShaderKind::TexturedQuad)
@@ -178,7 +175,7 @@ impl WebRenderer {
         );
 
         self.prepare_for_render(gl, &textured_quad, "ReflectionVisual");
-        textured_quad.render(gl, state, assets);
+        textured_quad.render(gl, state);
     }
 
     fn create_vao(&self) -> Vao {

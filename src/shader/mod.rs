@@ -1,5 +1,3 @@
-use nalgebra;
-use nalgebra::{Perspective3, Point3, Vector3};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use wasm_bindgen::prelude::*;

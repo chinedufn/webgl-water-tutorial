@@ -73,7 +73,7 @@ fn attach_mouse_down_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result
 }
 
 fn attach_mouse_up_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result<(), JsValue> {
-    let handler = move |event: web_sys::MouseEvent| {
+    let handler = move |_event: web_sys::MouseEvent| {
         app.store.borrow_mut().msg(&Msg::MouseUp);
     };
 
@@ -143,7 +143,7 @@ fn attach_touch_move_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result
 }
 
 fn attach_touch_end_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result<(), JsValue> {
-    let handler = move |event: web_sys::TouchEvent| {
+    let handler = move |_event: web_sys::TouchEvent| {
         app.store.borrow_mut().msg(&Msg::MouseUp);
     };
 
@@ -155,3 +155,4 @@ fn attach_touch_end_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result<
 
     Ok(())
 }
+

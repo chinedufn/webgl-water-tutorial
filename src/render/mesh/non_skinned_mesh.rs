@@ -1,4 +1,3 @@
-use crate::app::Assets;
 use crate::app::State;
 use crate::render::Render;
 use crate::render::TextureUnit;
@@ -54,7 +53,7 @@ impl<'a> Render<'a> for NonSkinnedMesh<'a> {
         NonSkinnedMesh::buffer_u16_indices(&gl, &mesh.vertex_position_indices[..]);
     }
 
-    fn render(&self, gl: &WebGlRenderingContext, state: &State, assets: &Assets) {
+    fn render(&self, gl: &WebGlRenderingContext, state: &State) {
         let shader = self.shader();
 
         let mesh = self.mesh;
