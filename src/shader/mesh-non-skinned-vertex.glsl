@@ -11,16 +11,13 @@ uniform mat4 perspective;
 varying vec3 vNormal;
 varying vec3 vWorldPos;
 varying float shouldClip;
+varying vec4 worldPosition;
 
 uniform vec3 cameraPos;
 varying vec3 fromFragmentToCamera;
 
-uniform vec4 clipPlane;
-
 void main (void) {
-  vec4 worldPosition = model * vec4(position, 1.0);
-
-  shouldClip = dot(worldPosition, clipPlane) < 0.0 ? 1.0 : 0.0;
+  worldPosition = model * vec4(position, 1.0);
 
   gl_Position = perspective * view * worldPosition;
 

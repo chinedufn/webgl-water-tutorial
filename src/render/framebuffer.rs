@@ -1,11 +1,8 @@
-// FIXME: Play with different refratin and reflection sizes to see whwat looks good
-//static REFLECTION_TEXTURE_WIDTH: i32 = 128;
-//static REFLECTION_TEXTURE_HEIGHT: i32 = 128;
-static REFLECTION_TEXTURE_WIDTH: i32 = 512; // TODO: DELETE in favor of above
-static REFLECTION_TEXTURE_HEIGHT: i32 = 512; // TODO: DELETE
+pub static REFLECTION_TEXTURE_WIDTH: i32 = 128;
+pub static REFLECTION_TEXTURE_HEIGHT: i32 = 128;
 
-static REFRACTION_TEXTURE_WIDTH: i32 = 512;
-static REFRACTION_TEXTURE_HEIGHT: i32 = 512;
+pub static REFRACTION_TEXTURE_WIDTH: i32 = 512;
+pub static REFRACTION_TEXTURE_HEIGHT: i32 = 512;
 
 use crate::render::TextureUnit;
 use crate::render::WebRenderer;
@@ -26,7 +23,7 @@ impl WebRenderer {
         let framebuffer = gl.create_framebuffer();
         gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
 
-        gl.active_texture(TextureUnit::Refraction.get());
+        gl.active_texture(TextureUnit::Refraction.TEXTURE_N());
         let color_texture = gl.create_texture();
         gl.bind_texture(GL::TEXTURE_2D, color_texture.as_ref());
 
@@ -45,7 +42,7 @@ impl WebRenderer {
         )?;
 
         let depth_texture = gl.create_texture();
-        gl.active_texture(TextureUnit::RefractionDepth.get());
+        gl.active_texture(TextureUnit::RefractionDepth.TEXTURE_N());
         gl.bind_texture(GL::TEXTURE_2D, depth_texture.as_ref());
         gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL::LINEAR as i32);
         gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MIN_FILTER, GL::LINEAR as i32);
@@ -98,9 +95,8 @@ impl WebRenderer {
 
         let color_texture = gl.create_texture();
 
-        gl.active_texture(TextureUnit::Reflection.get());
+        gl.active_texture(TextureUnit::Reflection.TEXTURE_N());
         gl.bind_texture(GL::TEXTURE_2D, color_texture.as_ref());
-        // FIXME: Constant for canvas width and height that we get from the canvas module
         gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL::LINEAR as i32);
         gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MIN_FILTER, GL::LINEAR as i32);
         gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_array_buffer_view(
@@ -115,8 +111,6 @@ impl WebRenderer {
             None,
         )?;
 
-        // FIXME: Research render buffer so that I understand it and can describe it in comments.
-        // Same with pretty much every WebGL API that we call
         let renderbuffer = gl.create_renderbuffer();
         gl.bind_renderbuffer(GL::RENDERBUFFER, renderbuffer.as_ref());
         gl.renderbuffer_storage(

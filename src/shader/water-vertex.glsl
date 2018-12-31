@@ -12,7 +12,6 @@ varying vec2 textureCoords;
 
 const float tiling = 4.0;
 
-// TODO: Breadcrumb - projective texture mapping of refraction an reflection textures
 void main() {
     vec4 worldPosition = model * vec4(position.x, 0.0, position.y, 1.0);
 

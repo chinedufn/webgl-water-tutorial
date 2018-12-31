@@ -6,6 +6,9 @@ use self::mouse::*;
 mod camera;
 use self::camera::*;
 
+mod water;
+use self::water::*;
+
 pub struct Store {
     pub state: StateWrapper,
 }
@@ -28,6 +31,7 @@ pub struct State {
     clock: f32,
     camera: Camera,
     mouse: Mouse,
+    water: Water,
 }
 
 impl State {
@@ -37,11 +41,16 @@ impl State {
             clock: 0.,
             camera: Camera::new(),
             mouse: Mouse::default(),
+            water: Water::new(),
         }
     }
 
     pub fn camera(&self) -> &Camera {
         &self.camera
+    }
+
+    pub fn water(&self) -> &Water {
+        &self.water
     }
 
     /// The current time in milliseconds
@@ -79,6 +88,15 @@ impl State {
             Msg::Zoom(zoom) => {
                 self.camera.zoom(*zoom);
             }
+            Msg::SetReflectivity(reflectivity) => {
+                self.water.reflectivity = *reflectivity;
+            }
+            Msg::SetFresnel(fresnel) => {
+                self.water.fresnel_strength = *fresnel;
+            }
+            Msg::SetWaveSpeed(wave_speed) => {
+                self.water.wave_speed = *wave_speed;
+            }
         }
     }
 }
@@ -105,4 +123,7 @@ pub enum Msg {
     MouseUp,
     MouseMove(i32, i32),
     Zoom(f32),
+    SetReflectivity(f32),
+    SetFresnel(f32),
+    SetWaveSpeed(f32),
 }

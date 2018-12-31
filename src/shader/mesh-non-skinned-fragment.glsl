@@ -9,7 +9,8 @@ varying vec2 vUvs;
 
 varying vec3 fromFragmentToCamera;
 
-varying float shouldClip;
+varying vec4 worldPosition;
+uniform vec4 clipPlane;
 
 float shininess = 0.4;
 
@@ -20,7 +21,7 @@ vec3 sunlightDir = normalize(vec3(-1.0, -1.0, 0.5));
 uniform sampler2D meshTexture;
 
 void main(void) {
-    if (shouldClip == 1.0) {
+    if (dot(worldPosition, clipPlane) < 0.0) {
         discard;
     }
 

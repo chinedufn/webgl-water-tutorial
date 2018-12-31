@@ -5,65 +5,68 @@ use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 use web_sys::*;
 
+static TEXTURED_QUAD_VS: &'static str = include_str!("./textured-quad-vertex.glsl");
+static TEXTURED_QUAD_FS: &'static str = include_str!("./textured-quad-fragment.glsl");
+
+static MESH_SKINNED_VS: &'static str = include_str!("./mesh-skinned-vertex.glsl");
+static MESH_SKINNED_FS: &'static str = include_str!("./mesh-skinned-fragment.glsl");
+
+static MESH_NON_SKINNED_VS: &'static str = include_str!("./mesh-non-skinned-vertex.glsl");
+static MESH_NON_SKINNED_FS: &'static str = include_str!("./mesh-non-skinned-fragment.glsl");
+
+static WATER_VS: &'static str = include_str!("./water-vertex.glsl");
+static WATER_FS: &'static str = include_str!("./water-fragment.glsl");
+
+/// Powers retrieving and using our shaders
 pub struct ShaderSystem {
     programs: HashMap<ShaderKind, Shader>,
+    active_program: RefCell<ShaderKind>,
 }
 
 impl ShaderSystem {
+    /// Create  a new ShaderSystem
     pub fn new(gl: &WebGlRenderingContext) -> ShaderSystem {
         let mut programs = HashMap::new();
 
-        // FIXME: Normalize
+        let water_shader = Shader::new(&gl, WATER_VS, WATER_FS).unwrap();
+        let non_skinned_shader =
+            Shader::new(&gl, MESH_NON_SKINNED_VS, MESH_NON_SKINNED_FS).unwrap();
+        let skinned_mesh_shader = Shader::new(&gl, MESH_SKINNED_VS, MESH_SKINNED_FS).unwrap();
+        let textured_quad_shader = Shader::new(&gl, TEXTURED_QUAD_VS, TEXTURED_QUAD_FS).unwrap();
 
-        programs.insert(
-            ShaderKind::Water,
-            Shader::new(
-                &gl,
-                include_str!("./water-vertex.glsl"),
-                include_str!("./water-fragment.glsl"),
-            )
-            .unwrap(),
-        );
+        let active_program = RefCell::new(ShaderKind::TexturedQuad);
+        gl.use_program(Some(&textured_quad_shader.program));
 
-        programs.insert(
-            ShaderKind::NonSkinnedMesh,
-            Shader::new(
-                &gl,
-                include_str!("./mesh-non-skinned-vertex.glsl"),
-                include_str!("./mesh-non-skinned-fragment.glsl"),
-            )
-            .unwrap(),
-        );
+        programs.insert(ShaderKind::Water, water_shader);
+        programs.insert(ShaderKind::NonSkinnedMesh, non_skinned_shader);
+        programs.insert(ShaderKind::SkinnedMesh, skinned_mesh_shader);
+        programs.insert(ShaderKind::TexturedQuad, textured_quad_shader);
 
-        programs.insert(
-            ShaderKind::SkinnedMesh,
-            Shader::new(
-                &gl,
-                include_str!("./mesh-skinned-vertex.glsl"),
-                include_str!("./mesh-skinned-fragment.glsl"),
-            )
-            .unwrap(),
-        );
-
-        programs.insert(
-            ShaderKind::TexturedQuad,
-            Shader::new(
-                &gl,
-                include_str!("./textured-quad-vertex.glsl"),
-                include_str!("./textured-quad-fragment.glsl"),
-            )
-            .unwrap(),
-        );
-
-        ShaderSystem { programs }
+        ShaderSystem {
+            programs,
+            active_program,
+        }
     }
 
+    /// Get one of our Shader's
     pub fn get_shader(&self, shader_kind: &ShaderKind) -> Option<&Shader> {
         self.programs.get(shader_kind)
     }
+
+    /// Use a shader program. We cache the last used shader program to avoid unnecessary
+    /// calls to the GPU.
+    pub fn use_program(&self, gl: &WebGlRenderingContext, shader_kind: ShaderKind) {
+        if *self.active_program.borrow() == shader_kind {
+            return;
+        }
+
+        gl.use_program(Some(&self.programs.get(&shader_kind).unwrap().program));
+        *self.active_program.borrow_mut() = shader_kind;
+    }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+/// Identifiers for our different shaders
+#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
 pub enum ShaderKind {
     Water,
     NonSkinnedMesh,
@@ -71,6 +74,7 @@ pub enum ShaderKind {
     TexturedQuad,
 }
 
+/// One per ShaderKind
 pub struct Shader {
     pub program: WebGlProgram,
     uniforms: RefCell<HashMap<String, WebGlUniformLocation>>,

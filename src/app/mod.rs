@@ -16,7 +16,7 @@ pub struct App {
 impl App {
     /// Create a new instance of our WebGL Water application
     pub fn new() -> App {
-        let mut assets = Assets::new();
+        let assets = Assets::new();
 
         App {
             assets,

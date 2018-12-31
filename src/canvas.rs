@@ -7,16 +7,10 @@ use wasm_bindgen::JsValue;
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
 
-static CANVAS_CONTAINER: &'static str = "webgl-water-tutorial";
-
-static MOUSE_DOWN: &'static str = "mousedown";
-static MOUSE_UP: &'static str = "mouseup";
-static MOUSE_MOVE: &'static str = "mousemove";
-static WHEEL: &'static str = "wheel";
+pub static APP_DIV_ID: &'static str = "webgl-water-tutorial";
 
 pub static CANVAS_WIDTH: i32 = 512;
 pub static CANVAS_HEIGHT: i32 = 512;
-
 
 pub fn create_webgl_context(app: Rc<App>) -> Result<WebGlRenderingContext, JsValue> {
     let canvas = init_canvas(app)?;
@@ -29,7 +23,7 @@ pub fn create_webgl_context(app: Rc<App>) -> Result<WebGlRenderingContext, JsVal
     Ok(gl)
 }
 
-fn init_canvas (app: Rc<App>) -> Result<HtmlCanvasElement, JsValue> {
+fn init_canvas(app: Rc<App>) -> Result<HtmlCanvasElement, JsValue> {
     let window = window().unwrap();
     let document = window.document().unwrap();
 
@@ -39,17 +33,25 @@ fn init_canvas (app: Rc<App>) -> Result<HtmlCanvasElement, JsValue> {
     canvas.set_height(CANVAS_HEIGHT as u32);
 
     attach_mouse_down_handler(&canvas, Rc::clone(&app))?;
-
     attach_mouse_up_handler(&canvas, Rc::clone(&app))?;
-
     attach_mouse_move_handler(&canvas, Rc::clone(&app))?;
-
     attach_mouse_wheel_handler(&canvas, Rc::clone(&app))?;
 
-    match document.get_element_by_id(CANVAS_CONTAINER) {
-        Some(container) => container.append_child(&canvas)?,
-        None => document.body().expect("Body").append_child(&canvas)?
+    attach_touch_start_handler(&canvas, Rc::clone(&app))?;
+    attach_touch_move_handler(&canvas, Rc::clone(&app))?;
+    attach_touch_end_handler(&canvas, Rc::clone(&app))?;
+
+    let app_div: HtmlElement = match document.get_element_by_id(APP_DIV_ID) {
+        Some(container) => container.dyn_into()?,
+        None => {
+            let app_div = document.create_element("div")?;
+            app_div.set_id(APP_DIV_ID);
+            app_div.dyn_into()?
+        }
     };
+
+    app_div.style().set_property("display", "flex")?;
+    app_div.append_child(&canvas)?;
 
     Ok(canvas)
 }
@@ -63,7 +65,7 @@ fn attach_mouse_down_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result
 
     let handler = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
 
-    canvas.add_event_listener_with_callback(MOUSE_DOWN, handler.as_ref().unchecked_ref())?;
+    canvas.add_event_listener_with_callback("mousedown", handler.as_ref().unchecked_ref())?;
 
     handler.forget();
 
@@ -77,10 +79,8 @@ fn attach_mouse_up_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result<(
 
     let handler = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
 
-    canvas.add_event_listener_with_callback(MOUSE_UP, handler.as_ref().unchecked_ref())?;
-
+    canvas.add_event_listener_with_callback("mouseup", handler.as_ref().unchecked_ref())?;
     handler.forget();
-
     Ok(())
 }
 
@@ -92,9 +92,7 @@ fn attach_mouse_move_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result
     };
 
     let handler = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
-
-    canvas.add_event_listener_with_callback(MOUSE_MOVE, handler.as_ref().unchecked_ref())?;
-
+    canvas.add_event_listener_with_callback("mousemove", handler.as_ref().unchecked_ref())?;
     handler.forget();
 
     Ok(())
@@ -108,8 +106,50 @@ fn attach_mouse_wheel_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Resul
     };
 
     let handler = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
+    canvas.add_event_listener_with_callback("wheel", handler.as_ref().unchecked_ref())?;
+    handler.forget();
 
-    canvas.add_event_listener_with_callback(WHEEL, handler.as_ref().unchecked_ref())?;
+    Ok(())
+}
+
+fn attach_touch_start_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result<(), JsValue> {
+    let handler = move |event: web_sys::TouchEvent| {
+        let touch = event.touches().item(0).expect("First Touch");
+        let x = touch.client_x();
+        let y = touch.client_y();
+        app.store.borrow_mut().msg(&Msg::MouseDown(x, y));
+    };
+
+    let handler = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
+    canvas.add_event_listener_with_callback("touchstart", handler.as_ref().unchecked_ref())?;
+    handler.forget();
+
+    Ok(())
+}
+
+fn attach_touch_move_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result<(), JsValue> {
+    let handler = move |event: web_sys::TouchEvent| {
+        let touch = event.touches().item(0).expect("First Touch");
+        let x = touch.client_x();
+        let y = touch.client_y();
+        app.store.borrow_mut().msg(&Msg::MouseMove(x, y));
+    };
+
+    let handler = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
+    canvas.add_event_listener_with_callback("touchmove", handler.as_ref().unchecked_ref())?;
+    handler.forget();
+
+    Ok(())
+}
+
+fn attach_touch_end_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result<(), JsValue> {
+    let handler = move |event: web_sys::TouchEvent| {
+        app.store.borrow_mut().msg(&Msg::MouseUp);
+    };
+
+    let handler = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
+
+    canvas.add_event_listener_with_callback("touchend", handler.as_ref().unchecked_ref())?;
 
     handler.forget();
 

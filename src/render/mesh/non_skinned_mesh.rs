@@ -14,13 +14,11 @@ pub struct NonSkinnedMesh<'a> {
     pub mesh: &'a BlenderMesh,
     pub shader: &'a Shader,
     pub opts: &'a MeshRenderOpts,
-    // TODO: pub buffers
 }
 
 pub struct MeshRenderOpts {
     pub pos: (f32, f32, f32),
     pub clip_plane: [f32; 4],
-    // FIXME: Better name
     pub flip_camera_y: bool,
 }
 
@@ -63,8 +61,6 @@ impl<'a> Render<'a> for NonSkinnedMesh<'a> {
         let opts = self.opts;
         let pos = opts.pos;
 
-        // FIXME: Use VAO's
-
         let model_uni = shader.get_uniform_location(gl, "model");
         let view_uni = shader.get_uniform_location(gl, "view");
         let camera_pos_uni = shader.get_uniform_location(gl, "cameraPos");
@@ -72,40 +68,28 @@ impl<'a> Render<'a> for NonSkinnedMesh<'a> {
         let clip_plane_uni = shader.get_uniform_location(gl, "clipPlane");
         let mesh_texture_uni = shader.get_uniform_location(gl, "meshTexture");
 
-        let view = if opts.flip_camera_y {
+        gl.uniform4fv_with_f32_array(clip_plane_uni.as_ref(), &mut opts.clip_plane.clone()[..]);
+
+        let mut view = if opts.flip_camera_y {
             state.camera().view_flipped_y()
         } else {
             state.camera().view()
         };
+        gl.uniform_matrix4fv_with_f32_array(view_uni.as_ref(), false, &mut view);
 
         let model = Isometry3::new(Vector3::new(pos.0, pos.1, pos.2), nalgebra::zero());
-
         let mut model_array = [0.; 16];
-        let mut view_array = [0.; 16];
-
         model_array.copy_from_slice(model.to_homogeneous().as_slice());
-        view_array.copy_from_slice(view.to_homogeneous().as_slice());
-
-        let perspective = state.camera().projection();
-        let mut perspective_array = [0.; 16];
-        perspective_array.copy_from_slice(perspective.as_matrix().as_slice());
+        gl.uniform_matrix4fv_with_f32_array(model_uni.as_ref(), false, &mut model_array);
 
         let camera_pos = state.camera().get_eye_pos();
         let mut camera_pos = [camera_pos.x, camera_pos.y, camera_pos.z];
-
-        // FIXME: Get rid of clone.. needed atm since render func isn't mut
-        gl.uniform4fv_with_f32_array(clip_plane_uni.as_ref(), &mut opts.clip_plane.clone()[..]);
-
         gl.uniform3fv_with_f32_array(camera_pos_uni.as_ref(), &mut camera_pos);
-        gl.uniform1i(mesh_texture_uni.as_ref(), TextureUnit::Stone as i32);
-        gl.uniform_matrix4fv_with_f32_array(
-            perspective_uni.as_ref(),
-            false,
-            &mut perspective_array,
-        );
 
-        gl.uniform_matrix4fv_with_f32_array(model_uni.as_ref(), false, &mut model_array);
-        gl.uniform_matrix4fv_with_f32_array(view_uni.as_ref(), false, &mut view_array);
+        gl.uniform1i(mesh_texture_uni.as_ref(), TextureUnit::Stone.texture_unit());
+
+        let mut perspective = state.camera().projection();
+        gl.uniform_matrix4fv_with_f32_array(perspective_uni.as_ref(), false, &mut perspective);
 
         let num_indices = mesh.vertex_position_indices.len();
         gl.draw_elements_with_i32(GL::TRIANGLES, num_indices as i32, GL::UNSIGNED_SHORT, 0);

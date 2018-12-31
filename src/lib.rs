@@ -15,17 +15,19 @@
 #![feature(custom_attribute)]
 
 extern crate wasm_bindgen;
+pub(in crate) use self::app::*;
 use self::canvas::*;
+use self::controls::*;
 use self::render::*;
+use crate::load_texture_img::load_texture_image;
 use console_error_panic_hook;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
-mod app;
-pub(in crate) use self::app::*;
-use crate::load_texture_img::load_texture_image;
 use web_sys::*;
 
+mod app;
 mod canvas;
+mod controls;
 mod load_texture_img;
 mod render;
 mod shader;
@@ -47,6 +49,7 @@ impl WebClient {
         let app = Rc::new(App::new());
 
         let gl = Rc::new(create_webgl_context(Rc::clone(&app)).unwrap());
+        append_controls(Rc::clone(&app)).expect("Append controls");
 
         let renderer = WebRenderer::new(&gl);
 

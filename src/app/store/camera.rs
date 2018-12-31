@@ -20,22 +20,35 @@ impl Camera {
         }
     }
 
-    pub fn view(&self) -> Isometry3<f32> {
+    pub fn view(&self) -> [f32; 16] {
         let eye = self.get_eye_pos();
 
         let target = Point3::new(0.0, 0.0, 0.0);
 
-        Isometry3::look_at_rh(&eye, &target, &Vector3::y())
+        let view = Isometry3::look_at_rh(&eye, &target, &Vector3::y());
+
+        let view = view.to_homogeneous();
+
+        let mut view_array = [0.; 16];
+        view_array.copy_from_slice(view.as_slice());
+
+        view_array
     }
 
-    // FIXME: Better name
-    pub fn view_flipped_y(&self) -> Isometry3<f32> {
+    pub fn view_flipped_y(&self) -> [f32; 16] {
         let mut eye = self.get_eye_pos();
         eye.y = -1.0 * eye.y;
 
         let target = Point3::new(0.0, 0.0, 0.0);
 
-        Isometry3::look_at_rh(&eye, &target, &Vector3::y())
+        let view = Isometry3::look_at_rh(&eye, &target, &Vector3::y());
+
+        let view = view.to_homogeneous();
+
+        let mut view_array = [0.; 16];
+        view_array.copy_from_slice(view.as_slice());
+
+        view_array
     }
 
     pub fn get_eye_pos(&self) -> Point3<f32> {
@@ -48,8 +61,11 @@ impl Camera {
 
         Point3::new(eye_x, eye_y, eye_z)
     }
-    pub fn projection(&self) -> &Perspective3<f32> {
-        &self.projection
+    pub fn projection(&self) -> [f32; 16] {
+        let mut perspective_array = [0.; 16];
+        perspective_array.copy_from_slice(self.projection.as_matrix().as_slice());
+
+        perspective_array
     }
 
     pub fn orbit_left_right(&mut self, delta: f32) {
@@ -61,6 +77,7 @@ impl Camera {
 
         // Make sure:
         // 0.1 <= radians <= PI / 2.1
+        // in order to restrict the camera's up/down orbit motion
 
         if self.up_down_radians - (PI / 2.1) > 0. {
             self.up_down_radians = PI / 2.1;
@@ -69,10 +86,6 @@ impl Camera {
         if self.up_down_radians - 0.1 < 0. {
             self.up_down_radians = 0.1;
         }
-    }
-
-    pub fn orbit_radius(&self) -> f32 {
-        self.orbit_radius
     }
 
     pub fn zoom(&mut self, zoom: f32) {

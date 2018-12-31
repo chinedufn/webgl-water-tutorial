@@ -14,7 +14,7 @@ pub fn load_texture_image(gl: Rc<WebGlRenderingContext>, src: &str, texture_unit
     let onload = Closure::wrap(Box::new(move || {
         let texture = gl.create_texture();
 
-        gl.active_texture(texture_unit.get());
+        gl.active_texture(texture_unit.TEXTURE_N());
 
         gl.bind_texture(GL::TEXTURE_2D, texture.as_ref());
 
