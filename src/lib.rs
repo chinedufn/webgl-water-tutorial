@@ -10,6 +10,9 @@
 //! If you have any questions or comments feel free to open an issue on GitHub!
 //!
 //! https://github.com/chinedufn/webgl-water-tutorial
+//!
+//! Heavily inspired by this @thinmatrix tutorial:
+//!   - https://www.youtube.com/watch?v=HusvGeEDU_U&list=PLRIWtICgwaX23jiqVByUs0bqhnalNTNZh
 
 #![deny(missing_docs)]
 #![feature(custom_attribute)]
@@ -79,5 +82,3 @@ impl WebClient {
             .render(&self.gl, &self.app.store.borrow().state, &self.app.assets());
     }
 }
-
-impl WebClient {}
