@@ -86,6 +86,7 @@ fn attach_mouse_up_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result<(
 
 fn attach_mouse_move_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result<(), JsValue> {
     let handler = move |event: web_sys::MouseEvent| {
+        event.prevent_default();
         let x = event.client_x();
         let y = event.client_y();
         app.store.borrow_mut().msg(&Msg::MouseMove(x, y));
@@ -100,6 +101,8 @@ fn attach_mouse_move_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result
 
 fn attach_mouse_wheel_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result<(), JsValue> {
     let handler = move |event: web_sys::WheelEvent| {
+        event.prevent_default();
+
         let zoom_amount = event.delta_y() / 50.;
 
         app.store.borrow_mut().msg(&Msg::Zoom(zoom_amount as f32));
@@ -129,6 +132,7 @@ fn attach_touch_start_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Resul
 
 fn attach_touch_move_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result<(), JsValue> {
     let handler = move |event: web_sys::TouchEvent| {
+        event.prevent_default();
         let touch = event.touches().item(0).expect("First Touch");
         let x = touch.client_x();
         let y = touch.client_y();
@@ -155,4 +159,3 @@ fn attach_touch_end_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result<
 
     Ok(())
 }
-

@@ -64,9 +64,21 @@ impl WebClient {
     pub fn start(&self) -> Result<(), JsValue> {
         let gl = &self.gl;
 
-        load_texture_image(Rc::clone(gl), "/dudvmap.png", TextureUnit::Dudv);
-        load_texture_image(Rc::clone(gl), "/normalmap.png", TextureUnit::NormalMap);
-        load_texture_image(Rc::clone(gl), "/stone-texture.png", TextureUnit::Stone);
+        load_texture_image(
+            Rc::clone(gl),
+            "/dudvmap.png",
+            TextureUnit::Dudv,
+        );
+        load_texture_image(
+            Rc::clone(gl),
+            "/normalmap.png",
+            TextureUnit::NormalMap,
+        );
+        load_texture_image(
+            Rc::clone(gl),
+            "/stone-texture.png",
+            TextureUnit::Stone,
+        );
 
         Ok(())
     }

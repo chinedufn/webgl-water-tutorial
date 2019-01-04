@@ -117,9 +117,10 @@ impl WebRenderer {
         gl.clear_color(0.53, 0.8, 0.98, 1.);
         gl.clear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT);
 
-        let clip_plane = [0., -1., 0., WATER_TILE_Y_POS];
-
-        self.render_meshes(gl, state, assets, clip_plane, false);
+        if state.water().use_refraction {
+            let clip_plane = [0., -1., 0., WATER_TILE_Y_POS];
+            self.render_meshes(gl, state, assets, clip_plane, false);
+        }
     }
 
     fn render_reflection_fbo(
@@ -136,9 +137,10 @@ impl WebRenderer {
         gl.clear_color(0.53, 0.8, 0.98, 1.);
         gl.clear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT);
 
-        let clip_plane = [0., 1., 0., -WATER_TILE_Y_POS];
-
-        self.render_meshes(gl, state, assets, clip_plane, true);
+        if state.water().use_reflection {
+            let clip_plane = [0., 1., 0., -WATER_TILE_Y_POS];
+            self.render_meshes(gl, state, assets, clip_plane, true);
+        }
     }
 
     fn render_refraction_visual(&self, gl: &WebGlRenderingContext, state: &State) {

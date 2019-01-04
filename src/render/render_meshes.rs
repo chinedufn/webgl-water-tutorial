@@ -21,6 +21,10 @@ impl WebRenderer {
         clip_plane: [f32; 4],
         flip_camera_y: bool,
     ) {
+        if !state.show_scenery() {
+            return;
+        }
+
         let (skin, no_skin) = (ShaderKind::SkinnedMesh, ShaderKind::NonSkinnedMesh);
 
         // Render Terrain

@@ -1,6 +1,10 @@
+// Reflection texture can be smaller since it gets distorted by the waves.
 pub static REFLECTION_TEXTURE_WIDTH: i32 = 128;
 pub static REFLECTION_TEXTURE_HEIGHT: i32 = 128;
 
+// Due to the fresnel effect when you look above the water it becomes very transparent,
+// so we want a larger texture for refraction so that the objects below the water can
+// be seen clearly.
 pub static REFRACTION_TEXTURE_WIDTH: i32 = 512;
 pub static REFRACTION_TEXTURE_HEIGHT: i32 = 512;
 
@@ -83,7 +87,6 @@ impl WebRenderer {
         })
     }
 
-    // FIXME: Normalize with refraction framebuffer
     pub(in crate::render) fn create_reflection_framebuffer(
         gl: &WebGlRenderingContext,
     ) -> Result<Framebuffer, JsValue> {

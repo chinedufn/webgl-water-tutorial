@@ -32,6 +32,7 @@ pub struct State {
     camera: Camera,
     mouse: Mouse,
     water: Water,
+    show_scenery: bool
 }
 
 impl State {
@@ -42,6 +43,7 @@ impl State {
             camera: Camera::new(),
             mouse: Mouse::default(),
             water: Water::new(),
+            show_scenery: true
         }
     }
 
@@ -56,6 +58,10 @@ impl State {
     /// The current time in milliseconds
     pub fn clock(&self) -> f32 {
         self.clock
+    }
+
+    pub fn show_scenery(&self) -> bool {
+        self.show_scenery
     }
 
     pub fn msg(&mut self, msg: &Msg) {
@@ -97,6 +103,15 @@ impl State {
             Msg::SetWaveSpeed(wave_speed) => {
                 self.water.wave_speed = *wave_speed;
             }
+            Msg::UseReflection(use_reflection) => {
+                self.water.use_reflection = *use_reflection;
+            }
+            Msg::UseRefraction(use_refraction) => {
+                self.water.use_refraction = *use_refraction;
+            }
+            Msg::ShowScenery(show_scenery) => {
+                self.show_scenery = *show_scenery;
+            }
         }
     }
 }
@@ -126,4 +141,7 @@ pub enum Msg {
     SetReflectivity(f32),
     SetFresnel(f32),
     SetWaveSpeed(f32),
+    UseReflection(bool),
+    UseRefraction(bool),
+    ShowScenery(bool),
 }
