@@ -10,7 +10,6 @@ uniform mat4 perspective;
 
 varying vec3 vNormal;
 varying vec3 vWorldPos;
-varying float shouldClip;
 varying vec4 worldPosition;
 
 uniform vec3 cameraPos;

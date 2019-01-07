@@ -30,7 +30,7 @@ vec4 deepWaterColor = vec4(0.0, 0.1, 0.2, 1.0);
 vec3 getNormal(vec2 textureCoords);
 
 void main() {
-    // Between 0 and 1
+    // Normalized device coordinates - Between 0 and 1
     vec2 ndc = (clipSpace.xy / clipSpace.w) / 2.0 + 0.5;
 
     vec2 refractTexCoords = vec2(ndc.x, ndc.y);
@@ -45,14 +45,14 @@ void main() {
     // other thing under the water. This distance will depend on our camera angle.
     float cameraToFirstThingBehindWater = texture2D(waterDepthTexture, refractTexCoords).r;
     // Convert from our perspective transformed distance to our world distance
-    float waterToFirstThingUnderWater = 2.0 * near * far /
+    float cameraToFirstThingUnderWater = 2.0 * near * far /
      (far + near - (2.0 * cameraToFirstThingBehindWater - 1.0)
       * (far - near));
 
     float cameraToWaterDepth = gl_FragCoord.z;
     float cameraToWaterDistance = 2.0 * near * far / (far + near - (2.0 * cameraToWaterDepth - 1.0) * (far - near));
 
-    float angledWaterDepth = waterToFirstThingUnderWater - cameraToWaterDistance;
+    float angledWaterDepth = cameraToFirstThingUnderWater - cameraToWaterDistance;
 
     vec2 distortedTexCoords = texture2D(dudvTexture, vec2(textureCoords.x + dudvOffset, textureCoords.y)).rg * 0.1;
     distortedTexCoords = textureCoords + vec2(distortedTexCoords.x, distortedTexCoords.y + dudvOffset);
@@ -64,6 +64,10 @@ void main() {
     refractTexCoords += totalDistortion;
     reflectTexCoords += totalDistortion;
 
+    // Prevent out distortions from sampling from the opposite side of the texture
+    // NOTE: This will still cause artifacts towards the edges of the water. You can fix this by
+    // making the water more transparent at the edges.
+    // @see https://www.youtube.com/watch?v=qgDPSnZPGMA
     refractTexCoords = clamp(refractTexCoords, 0.001, 0.999);
     reflectTexCoords.x = clamp(reflectTexCoords.x, 0.001, 0.999);
     reflectTexCoords.y = clamp(reflectTexCoords.y, -0.999, -0.001);
@@ -71,6 +75,7 @@ void main() {
     vec4 reflectColor = texture2D(reflectionTexture, reflectTexCoords);
 
     vec4 refractColor = texture2D(refractionTexture, refractTexCoords);
+
     refractColor = mix(refractColor, deepWaterColor, clamp(angledWaterDepth/10.0, 0.0, 1.0));
 
     vec3 toCamera = normalize(fromFragmentToCamera);

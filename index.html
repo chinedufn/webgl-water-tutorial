@@ -4,33 +4,33 @@
   </head>
   <body>
 
-    <div id="webgl-water-tutorial" />
+    <div id="webgl-water-tutorial"> </div>
 
-      <script src='/webgl_water_tutorial.js'></script>
+    <script src='/webgl_water_tutorial.js'></script>
 
-      <script>
-        window.addEventListener('load', function () {
-          window.wasm_bindgen('/webgl_water_tutorial_bg.wasm')
-            .then(function () {
-              // Start our rust application. You can find `WebClient` in `src/lib.rs`
-              const webClient = new window.wasm_bindgen.WebClient()
-              webClient.start()
+    <script>
+    window.addEventListener('load', function () {
+      window.wasm_bindgen('/webgl_water_tutorial_bg.wasm')
+        .then(function () {
+          // Start our rust application. You can find `WebClient` in `src/lib.rs`
+          const webClient = new window.wasm_bindgen.WebClient()
+          webClient.start()
 
-              let time = Date.now();
-              function render () {
-                const dt = Date.now() - time
+          let time = Date.now();
+          function render () {
+            const dt = Date.now() - time
 
-                webClient.update(dt)
-                webClient.render()
-                window.requestAnimationFrame(render)
+            webClient.update(dt)
+            webClient.render()
+            window.requestAnimationFrame(render)
 
-                time = Date.now()
-              }
+            time = Date.now()
+          }
 
-              render()
-            })
+          render()
         })
-      </script>
+    })
+    </script>
 
   </body>
 </html>

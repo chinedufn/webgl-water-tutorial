@@ -1,10 +1,24 @@
 # WebGL Basic Water Tutorial
 
+If you have any questions or run into any stumbling blocks please feel free to
+[open an issue](https://github.com/chinedufn/webgl-water-tutorial/issues)!
+
 [Read the tutorial](http://chinedufn.com/webgl-basic-water-tutorial/)
 
 ![Screenshot of tutorial](/screenshot.png)
 
-[Read the tutorial](http://chinedufn.com/webgl-basic-water-tutorial/)
+```sh
+# You can use any static file server that properly sets the
+# `application/wasm` mime type
+npm install -g http-server
+
+git clone https://github.com/chinedufn/webgl-water-tutorial
+cd webgl-water-tutorial
+cargo install -f wasm-bindgen@0.2.29 # Or download a release binary
+./build.sh
+
+# Visit http://localhost:8080 in your browser
+```
 
 # See Also
 

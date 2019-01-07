@@ -1,7 +1,5 @@
 precision mediump float;
 
-// TODO: Pass this uniform in
-
 varying vec3 vNormal;
 varying vec3 vWorldPos;
 
