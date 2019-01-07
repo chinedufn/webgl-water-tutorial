@@ -17,6 +17,7 @@ cd webgl-water-tutorial
 cargo install -f wasm-bindgen@0.2.29 # Or download a release binary
 ./build.sh
 
+http-server
 # Visit http://localhost:8080 in your browser
 ```
 
