@@ -249,17 +249,17 @@ impl Checkbox {
         let window = window().unwrap();
         let document = window.document().unwrap();
 
-        let slider: HtmlInputElement = document.create_element("input")?.dyn_into()?;
-        slider.set_type("checkbox");
-        slider.set_checked(self.start_checked);
+        let checkbox: HtmlInputElement = document.create_element("input")?.dyn_into()?;
+        checkbox.set_type("checkbox");
+        checkbox.set_checked(self.start_checked);
 
         let closure = self.closure;
-        slider.set_oninput(Some(closure.as_ref().unchecked_ref()));
+        checkbox.set_oninput(Some(closure.as_ref().unchecked_ref()));
         closure.forget();
 
         let label = document.create_element("label")?;
         label.set_inner_html(self.label);
-        label.append_child(&slider)?;
+        label.append_child(&checkbox)?;
 
         let container = document.create_element("div")?;
         container.append_child(&label)?;
