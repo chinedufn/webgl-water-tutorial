@@ -3,7 +3,7 @@
 If you have any questions or run into any stumbling blocks please feel free to
 [open an issue](https://github.com/chinedufn/webgl-water-tutorial/issues)!
 
-[Read the tutorial](http://chinedufn.com/webgl-basic-water-tutorial/)
+[Read the tutorial](http://chinedufn.com/3d-webgl-basic-water-tutorial/)
 
 ![Screenshot of tutorial](/screenshot.png)
 
