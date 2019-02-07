@@ -18,7 +18,7 @@ cargo install -f wasm-bindgen@0.2.29 # Or download a release binary
 ./build.sh
 
 ## Opens your browser to http://localhost:8080  where the demo will be running
-http-server --opem
+http-server --open
 ```
 
 # See Also
