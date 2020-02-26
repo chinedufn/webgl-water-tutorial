@@ -14,7 +14,7 @@ npm install -g http-server
 
 git clone https://github.com/chinedufn/webgl-water-tutorial
 cd webgl-water-tutorial
-cargo install -f wasm-bindgen-cli@0.2.29 # Or download a release binary
+cargo install -f wasm-bindgen-cli --version 0.2.29 # Or download a release binary
 ./build.sh
 
 ## Opens your browser to http://localhost:8080  where the demo will be running
