@@ -22,43 +22,46 @@ use std::process::Command;
 // landon blender install armature-to-json
 // ```
 fn main() {
-    let blender_files = vec!["./terrain.blend".to_string(), "./bird.blend".to_string()];
+    // TODO: This worked in Blender 2.7 but no longer in Blender 2.8. Later versions of landon
+    // work with Blender 2.8 - so feel free to adjust this code to a later version of landon.
 
-    // Only re-run this build script if we change our blender file
-    for blender_file in blender_files.iter() {
-        println!("{}", format!("cargo:rerun-if-changed={}", blender_file));
-    }
+    // let blender_files = vec!["./terrain.blend".to_string(), "./bird.blend".to_string()];
 
-    // Checks if `blender` is in your $PATH
-    let found_blender_executable = Command::new("command")
-        .args(&["-v", "blender"])
-        .output()
-        .unwrap()
-        .stdout
-        .len()
-        > 0;
+    // // Only re-run this build script if we change our blender file
+    // for blender_file in blender_files.iter() {
+    //     println!("{}", format!("cargo:rerun-if-changed={}", blender_file));
+    // }
 
-    if !found_blender_executable {
-        return;
-    }
+    // // Checks if `blender` is in your $PATH
+    // let found_blender_executable = Command::new("command")
+    //     .args(&["-v", "blender"])
+    //     .output()
+    //     .unwrap()
+    //     .stdout
+    //     .len()
+    //     > 0;
 
-    let blender_stdout = landon::export_blender_data(&blender_files).unwrap();
+    // if !found_blender_executable {
+    //     return;
+    // }
 
-    let meshes_by_file = blender_mesh::parse_meshes_from_blender_stdout(&blender_stdout).unwrap();
-    let flattened_meshes = blender_mesh::flatten_exported_meshes(&meshes_by_file).unwrap();
-    let flattened_meshes = bincode::serialize(&flattened_meshes).unwrap();
+    // let blender_stdout = landon::export_blender_data(&blender_files).unwrap();
 
-    let mut f = File::create("./meshes.bytes").unwrap();
-    f.write_all(&flattened_meshes[..]).unwrap();
+    // let meshes_by_file = blender_mesh::parse_meshes_from_blender_stdout(&blender_stdout).unwrap();
+    // let flattened_meshes = blender_mesh::flatten_exported_meshes(&meshes_by_file).unwrap();
+    // let flattened_meshes = bincode::serialize(&flattened_meshes).unwrap();
 
-    let armatures_by_file =
-        blender_armature::parse_armatures_from_blender_stdout(&blender_stdout).unwrap();
+    // let mut f = File::create("./meshes.bytes").unwrap();
+    // f.write_all(&flattened_meshes[..]).unwrap();
 
-    let flattened_armatures =
-        blender_armature::flatten_exported_armatures(&armatures_by_file).unwrap();
+    // let armatures_by_file =
+    //     blender_armature::parse_armatures_from_blender_stdout(&blender_stdout).unwrap();
 
-    let flattened_armatures = bincode::serialize(&flattened_armatures).unwrap();
+    // let flattened_armatures =
+    //     blender_armature::flatten_exported_armatures(&armatures_by_file).unwrap();
 
-    let mut f = File::create("./armatures.bytes").unwrap();
-    f.write_all(&flattened_armatures[..]).unwrap();
+    // let flattened_armatures = bincode::serialize(&flattened_armatures).unwrap();
+
+    // let mut f = File::create("./armatures.bytes").unwrap();
+    // f.write_all(&flattened_armatures[..]).unwrap();
 }
