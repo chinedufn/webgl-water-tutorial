@@ -63,7 +63,7 @@ fn attach_mouse_down_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result
         app.store.borrow_mut().msg(&Msg::MouseDown(x, y));
     };
 
-    let handler = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
+    let handler = Closure::wrap(Box::new(handler) as Box<dyn FnMut(_)>);
 
     canvas.add_event_listener_with_callback("mousedown", handler.as_ref().unchecked_ref())?;
 
@@ -77,7 +77,7 @@ fn attach_mouse_up_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result<(
         app.store.borrow_mut().msg(&Msg::MouseUp);
     };
 
-    let handler = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
+    let handler = Closure::wrap(Box::new(handler) as Box<dyn FnMut(_)>);
 
     canvas.add_event_listener_with_callback("mouseup", handler.as_ref().unchecked_ref())?;
     handler.forget();
@@ -92,7 +92,7 @@ fn attach_mouse_move_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result
         app.store.borrow_mut().msg(&Msg::MouseMove(x, y));
     };
 
-    let handler = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
+    let handler = Closure::wrap(Box::new(handler) as Box<dyn FnMut(_)>);
     canvas.add_event_listener_with_callback("mousemove", handler.as_ref().unchecked_ref())?;
     handler.forget();
 
@@ -108,7 +108,7 @@ fn attach_mouse_wheel_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Resul
         app.store.borrow_mut().msg(&Msg::Zoom(zoom_amount as f32));
     };
 
-    let handler = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
+    let handler = Closure::wrap(Box::new(handler) as Box<dyn FnMut(_)>);
     canvas.add_event_listener_with_callback("wheel", handler.as_ref().unchecked_ref())?;
     handler.forget();
 
@@ -123,7 +123,7 @@ fn attach_touch_start_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Resul
         app.store.borrow_mut().msg(&Msg::MouseDown(x, y));
     };
 
-    let handler = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
+    let handler = Closure::wrap(Box::new(handler) as Box<dyn FnMut(_)>);
     canvas.add_event_listener_with_callback("touchstart", handler.as_ref().unchecked_ref())?;
     handler.forget();
 
@@ -139,7 +139,7 @@ fn attach_touch_move_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result
         app.store.borrow_mut().msg(&Msg::MouseMove(x, y));
     };
 
-    let handler = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
+    let handler = Closure::wrap(Box::new(handler) as Box<dyn FnMut(_)>);
     canvas.add_event_listener_with_callback("touchmove", handler.as_ref().unchecked_ref())?;
     handler.forget();
 
@@ -151,7 +151,7 @@ fn attach_touch_end_handler(canvas: &HtmlCanvasElement, app: Rc<App>) -> Result<
         app.store.borrow_mut().msg(&Msg::MouseUp);
     };
 
-    let handler = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
+    let handler = Closure::wrap(Box::new(handler) as Box<dyn FnMut(_)>);
 
     canvas.add_event_listener_with_callback("touchend", handler.as_ref().unchecked_ref())?;
 
