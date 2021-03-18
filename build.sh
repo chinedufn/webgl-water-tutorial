@@ -7,7 +7,6 @@ cd $(dirname $0)
 WASM_TARGET=wasm32-unknown-unknown
 NIGHTLY=nightly-2021-02-11
 
-rustup override set ${NIGHTLY}
 rustup target add ${WASM_TARGET}
 
 # ./build.sh
@@ -17,7 +16,7 @@ if [ -z "$RELEASE"  ]; then
   # --------------------------------------------------
 
   # Build the webgl_water_tutorial.wasm file
-  RUST_BACKTRACE=1 cargo build --target ${WASM_TARGET}
+  RUST_BACKTRACE=1 cargo +${NIGHTLY} build --target ${WASM_TARGET}
 
   # # Process the webgl_water_tutorial.wasm file and generate the necessary
   # # JavaScript glue code to run it in the browser.
@@ -31,7 +30,7 @@ else
   # --------------------------------------------------
 
   # Build the webgl_water_tutorial.wasm file
-  cargo build --target ${WASM_TARGET} --release &&
+  cargo +${NIGHTLY} build --target ${WASM_TARGET} --release &&
   wasm-bindgen ./target/${WASM_TARGET}/release/webgl_water_tutorial.wasm --out-dir . --no-typescript --no-modules &&
   wasm-opt -O3 -o optimized.wasm webgl_water_tutorial_bg.wasm  &&
   mv optimized.wasm webgl_water_tutorial_bg.wasm
