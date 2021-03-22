@@ -15,7 +15,6 @@
 //!   - https://www.youtube.com/watch?v=HusvGeEDU_U&list=PLRIWtICgwaX23jiqVByUs0bqhnalNTNZh
 
 #![deny(missing_docs)]
-#![feature(custom_attribute)]
 
 extern crate wasm_bindgen;
 pub(in crate) use self::app::*;

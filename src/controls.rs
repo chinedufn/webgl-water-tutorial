@@ -79,7 +79,7 @@ fn create_reflectivity_control(app: Rc<App>) -> Result<HtmlElement, JsValue> {
             .borrow_mut()
             .msg(&Msg::SetReflectivity(reflectivity));
     };
-    let closure = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
+    let closure = Closure::wrap(Box::new(handler) as Box<dyn FnMut(_)>);
 
     let reflectivity_control = Slider {
         min: 0.0,
@@ -101,7 +101,7 @@ fn create_fresnel_control(app: Rc<App>) -> Result<HtmlElement, JsValue> {
 
         app.store.borrow_mut().msg(&Msg::SetFresnel(fresnel));
     };
-    let closure = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
+    let closure = Closure::wrap(Box::new(handler) as Box<dyn FnMut(_)>);
 
     let fresnel_control = Slider {
         min: 0.0,
@@ -123,7 +123,7 @@ fn create_wave_speed_control(app: Rc<App>) -> Result<HtmlElement, JsValue> {
 
         app.store.borrow_mut().msg(&Msg::SetWaveSpeed(wave_speed));
     };
-    let closure = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
+    let closure = Closure::wrap(Box::new(handler) as Box<dyn FnMut(_)>);
 
     let wave_speed_control = Slider {
         min: 0.0,
@@ -147,7 +147,7 @@ fn create_use_refraction_checkbox(app: Rc<App>) -> Result<HtmlElement, JsValue> 
             .borrow_mut()
             .msg(&Msg::UseRefraction(use_refraction));
     };
-    let closure = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
+    let closure = Closure::wrap(Box::new(handler) as Box<dyn FnMut(_)>);
 
     let use_refraction_control = Checkbox {
         start_checked: true,
@@ -168,7 +168,7 @@ fn create_use_reflection_checkbox(app: Rc<App>) -> Result<HtmlElement, JsValue> 
             .borrow_mut()
             .msg(&Msg::UseReflection(use_reflection));
     };
-    let closure = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
+    let closure = Closure::wrap(Box::new(handler) as Box<dyn FnMut(_)>);
 
     let use_reflection_control = Checkbox {
         start_checked: true,
@@ -187,7 +187,7 @@ fn create_show_scenery_control(app: Rc<App>) -> Result<HtmlElement, JsValue> {
 
         app.store.borrow_mut().msg(&Msg::ShowScenery(show_scenery));
     };
-    let closure = Closure::wrap(Box::new(handler) as Box<FnMut(_)>);
+    let closure = Closure::wrap(Box::new(handler) as Box<dyn FnMut(_)>);
 
     let show_scenery_control = Checkbox {
         start_checked: true,
@@ -205,7 +205,7 @@ struct Slider {
     step: f32,
     start: f32,
     label: &'static str,
-    closure: Closure<FnMut(web_sys::Event)>,
+    closure: Closure<dyn FnMut(web_sys::Event)>,
 }
 
 impl Slider {
@@ -241,7 +241,7 @@ impl Slider {
 struct Checkbox {
     start_checked: bool,
     label: &'static str,
-    closure: Closure<FnMut(web_sys::Event)>,
+    closure: Closure<dyn FnMut(web_sys::Event)>,
 }
 
 impl Checkbox {
