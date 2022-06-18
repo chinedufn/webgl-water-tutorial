@@ -16,13 +16,12 @@ git clone https://github.com/chinedufn/webgl-water-tutorial
 cd webgl-water-tutorial
 
 # A version of Rust that can compile wasm-bindgen-cli version 0.2.29
-rustup override set nightly-2021-02-11
-cargo +nightly-2020-06-22 install -f wasm-bindgen-cli --version 0.2.29 # Or download a release binary
+cargo install -f wasm-bindgen-cli --version 0.2.29 # Or download a release binary
 
 # Build
 ./build.sh
 
-## Opens your browser to http://localhost:8080  where the demo will be running
+## Opens your browser to http://localhost:8000  where the demo will be running
 http -m wasm:application/wasm
 ```
 
@@ -30,3 +29,4 @@ http -m wasm:application/wasm
 
 - [ThinMatrix's OpenGL Water Tutorial](https://www.youtube.com/watch?v=HusvGeEDU_U&list=PLRIWtICgwaX23jiqVByUs0bqhnalNTNZh) - Heavily inspired this WebGL implementation
 - [Landon](https://github.com/chinedufn/landon) - Used for exporting meshes and armatures from Blender
+- [Binaryen](https://github.com/WebAssembly/binaryen) - WASM compiler and toolchain infrastructure library
