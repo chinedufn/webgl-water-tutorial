@@ -128,7 +128,7 @@ impl Deref for StateWrapper {
 
 impl StateWrapper {
     pub fn msg(&mut self, msg: &Msg) {
-        &self.0.msg(msg);
+        let _ = &self.0.msg(msg);
     }
 }
 
